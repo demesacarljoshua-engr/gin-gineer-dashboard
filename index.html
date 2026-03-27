@@ -912,6 +912,23 @@ let budgetLocked = false, scheduleLocked = false;
 let variationOrders = [], challenges = [];
 let scopeCollapsed = {};
 
+// Find the SCHEDULE index of the section that best matches a contract category name
+// Handles "I. General Requirements" vs "General Requirements" mismatch
+function findScheduleSectionIdx(catName){
+  const cat=catName.toLowerCase();
+  // Try exact match first (for user-added categories)
+  let idx=SCHEDULE.findIndex(t=>t.section&&t.section===catName);
+  if(idx>=0) return idx;
+  // Try: section contains all significant words from catName
+  const words=cat.split(/[\s\/&]+/).filter(w=>w.length>3);
+  idx=SCHEDULE.findIndex(t=>{
+    if(!t.section) return false;
+    const sec=t.section.toLowerCase();
+    return words.some(w=>sec.includes(w));
+  });
+  return idx; // -1 if not found
+}
+
 // ============================================================
 // HELPERS
 // ============================================================
@@ -1211,9 +1228,31 @@ function buildProjection(costData, schedData, planned){
     const daysNeeded=useRate>0?Math.ceil(remaining/useRate):PROJECT.totalDays-curDay;
     projEndDay=curDay+daysNeeded;
   }
-  const projEndDate=dayToDate(Math.min(projEndDay,PROJECT.totalDays));
-  const origEndDate=dayToDate(PROJECT.totalDays);
 
+  // Always compute a real calendar date — even if projEndDay > totalDays
+  // by walking forward from the last known date using working day rules
+  function getCalendarDateForDay(targetDay){
+    if(targetDay<=PROJECT.totalDays){
+      return dayToDate(targetDay)||null;
+    }
+    // Beyond project end — extend working days from last known date
+    const lastKnown=dayDateMap[dayDateMap.length-1];
+    if(!lastKnown) return null;
+    let d=new Date(lastKnown.d);
+    let extra=targetDay-PROJECT.totalDays;
+    while(extra>0){
+      d.setDate(d.getDate()+1);
+      const dow=d.getDay();
+      const iso=d.toISOString().split('T')[0];
+      const isWork=PROJECT.workMode==='office'?(dow>=1&&dow<=5):(dow>=1&&dow<=6);
+      const isHol=PROJECT.holidays.some(h=>h.date===iso);
+      if(isWork&&!isHol) extra--;
+    }
+    return d.toISOString().split('T')[0];
+  }
+
+  const projEndDate=getCalendarDateForDay(projEndDay);
+  const origEndDate=dayToDate(PROJECT.totalDays);
   const diff=projEndDay-PROJECT.totalDays;
   const diffLabel=diff>0?`<span class="neg">${diff} working days DELAYED</span>`:diff<0?`<span class="pos">${Math.abs(diff)} working days AHEAD</span>`:'<span class="pos">ON SCHEDULE</span>';
 
@@ -1226,7 +1265,7 @@ function buildProjection(costData, schedData, planned){
       <div>vs Planned: <span class="${parseFloat(schedVar)>=0?'pos':'neg'}">${schedVar}%</span></div>
     </div>
     <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
-      <div style="font-size:11px">Projected End: <strong>${projEndDay<=PROJECT.totalDays?formatDateShort(projEndDate):'Beyond Day '+PROJECT.totalDays}</strong> (Day ${projEndDay})</div>
+      <div style="font-size:11px">Projected End: <strong>${formatDateShort(projEndDate)||'—'}</strong>${diff>0?' (Day '+projEndDay+' — '+diff+' days over)':diff<0?' (Day '+projEndDay+')':' (Day '+PROJECT.totalDays+')'}</div>
       <div style="font-size:11px;margin-top:4px">Original End: ${formatDateShort(origEndDate)} (Day ${PROJECT.totalDays})</div>
       <div style="font-size:13px;margin-top:8px;font-weight:600">${diffLabel}</div>
     </div>`;
@@ -1272,10 +1311,9 @@ function buildDashboard(){
   document.getElementById('kpi-income').className='kpi-value '+(income>=0?'pos':'neg');
   document.getElementById('kpi-income-sub').textContent=marginPct+'% margin';
 
-  // Donut charts
-  buildDonut('dash-donut-budget','dash-budget-legend',[contractBudget,mpBudget,Math.max(0,bt-contractBudget)],['#f5c842','#7c6aff','#252a38'],['Contract Budget','Labor Budget','Unallocated']);
-  buildDonut('dash-donut-schedule','dash-sched-legend',[Math.round(projPct),Math.round(100-projPct)],['#4fc3a1','#252a38'],[projPct.toFixed(1)+'% Complete','Remaining'],projPct.toFixed(1)+'%');
-  buildDonut('dash-donut-cash','dash-cash-legend',[col,tot,Math.max(0,bt-col-tot)],['#4fc3a1','#e85555','#252a38'],['Collected','Spent','Remaining']);
+  // Contractor donuts (safe null-check)
+  if(document.getElementById('dash-donut-budget')) buildDonut('dash-donut-budget','dash-budget-legend',[contractBudget,mpBudget,Math.max(0,bt-contractBudget)],['#f5c842','#7c6aff','#252a38'],['Contract Budget','Labor Budget','Unallocated']);
+  if(document.getElementById('dash-donut-cash')) buildDonut('dash-donut-cash','dash-cash-legend',[col,tot,Math.max(0,bt-col-tot)],['#4fc3a1','#e85555','#252a38'],['Collected','Spent','Remaining']);
 
   // Payment summary
   document.getElementById('dash-pay-badge').textContent=MILESTONES.filter(m=>m.paid).length+' of '+MILESTONES.length+' paid';
@@ -1289,22 +1327,38 @@ function buildDashboard(){
   // Scope — collapsible categories
   document.getElementById('dash-scope-summary').textContent=done+' done · '+active+' active · '+pending+' pending';
 
-  // Helper: get contract cost for a task by matching description
+  // Helper: get contract cost for a task — exact match first, then fuzzy
   function getContractCost(task){
-    const cc=COST_CODES_SELLING.find(c=>!isInternalOnly(c)&&c.desc&&task.name&&(
-      c.desc.toLowerCase()===task.name.toLowerCase()||
-      c.desc.toLowerCase().includes(task.name.split(' ')[0].toLowerCase())||
-      task.name.toLowerCase().includes(c.desc.split(' ')[0].toLowerCase())
-    ));
+    if(!task.name) return 0;
+    const tn=task.name.toLowerCase().trim();
+    // 1. Exact match
+    let cc=COST_CODES_SELLING.find(c=>!isInternalOnly(c)&&c.desc&&c.desc.toLowerCase().trim()===tn);
+    if(!cc){
+      // 2. Task name contains cost code desc
+      cc=COST_CODES_SELLING.find(c=>!isInternalOnly(c)&&c.desc&&tn.includes(c.desc.toLowerCase().trim()));
+    }
+    if(!cc){
+      // 3. Cost code desc contains task name
+      cc=COST_CODES_SELLING.find(c=>!isInternalOnly(c)&&c.desc&&c.desc.toLowerCase().trim().includes(tn));
+    }
+    if(!cc){
+      // 4. First significant word match (3+ chars)
+      const words=tn.split(/\s+/).filter(w=>w.length>=4);
+      cc=COST_CODES_SELLING.find(c=>!isInternalOnly(c)&&c.desc&&words.some(w=>c.desc.toLowerCase().includes(w)));
+    }
     return cc?(cc.selling||0):0;
   }
 
-  // Group SCHEDULE into sections
+  // Group SCHEDULE into sections, strip Roman numeral prefix for display
   let sections=[];
   let curSec=null;
   for(const t of SCHEDULE){
-    if(t.section){curSec={label:t.section,tasks:[]};sections.push(curSec);}
-    else if(curSec){curSec.tasks.push(t);}
+    if(t.section){
+      // Strip "I. ", "II. " etc for cleaner display
+      const cleanLabel=t.section.replace(/^[IVXLCDM]+\.\s*/,'');
+      curSec={label:t.section,displayLabel:cleanLabel,tasks:[]};
+      sections.push(curSec);
+    } else if(curSec){curSec.tasks.push(t);}
   }
 
   let rows='', globalNum=0;
@@ -1356,7 +1410,26 @@ function buildDashboard(){
       }
     }
   }
+
+  // Total row at bottom of scope table
+  const totalContractCost=sections.reduce((sum,sec)=>sum+sec.tasks.reduce((s,t)=>s+getContractCost(t),0),0);
+  const contractTotal=getTotalSelling();
+  const costMatch=Math.abs(totalContractCost-contractTotal)<1;
+  rows+=`<tr style="background:var(--bg2);font-weight:600;border-top:2px solid var(--border)">
+    <td colspan="2" style="padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3)">Total</td>
+    <td style="font-size:10px;color:var(--text3)">—</td>
+    <td style="font-size:12px;color:var(--accent);font-family:Syne,sans-serif;font-weight:700">${fmtS(totalContractCost)}
+      ${!costMatch&&contractTotal>0?`<span style="font-size:9px;color:var(--danger);margin-left:6px" title="Contract value: ${fmtS(contractTotal)}">≠ Contract</span>`:'<span style="font-size:9px;color:var(--accent3);margin-left:6px">✓</span>'}
+    </td>
+    <td></td>
+    <td></td>
+    <td></td>
+  </tr>`;
+
   document.getElementById('dash-scope-tbody').innerHTML=rows;
+
+  // Build S-Curve — defer slightly so canvas is visible/sized
+  setTimeout(buildDashSCurve, 50);
 }
 
 let dashDonuts={};
@@ -1590,14 +1663,17 @@ function submitContractItem(){
     const alreadyInSchedule=SCHEDULE.some(t=>t.id&&t.name&&t.name.toLowerCase()===desc.toLowerCase());
     if(!alreadyInSchedule){
       const taskId='t'+Date.now();
-      // Find correct section to insert into
+      const secIdx=findScheduleSectionIdx(catName);
       let insertIdx=SCHEDULE.length;
-      for(let i=0;i<SCHEDULE.length;i++){
-        if(SCHEDULE[i].section===catName){
-          let j=i+1;
-          while(j<SCHEDULE.length&&!SCHEDULE[j].section)j++;
-          insertIdx=j; break;
-        }
+      if(secIdx>=0){
+        // Find end of this section
+        let j=secIdx+1;
+        while(j<SCHEDULE.length&&!SCHEDULE[j].section)j++;
+        insertIdx=j;
+      } else {
+        // Section doesn't exist yet — add it then insert task after it
+        SCHEDULE.push({section:catName});
+        insertIdx=SCHEDULE.length;
       }
       SCHEDULE.splice(insertIdx,0,{id:taskId,name:desc,targetStartDay:0,targetEndDay:PROJECT.totalDays,actualStartDate:null,pctComplete:0});
     }
@@ -1652,16 +1728,13 @@ function rebuildScheduleFromContract(){
   const existingNames=new Set(SCHEDULE.filter(t=>t.id).map(t=>t.name));
   contractItems.forEach(c=>{
     if(!existingNames.has(c.desc)){
-      // Find appropriate section
+      // Find appropriate section using fuzzy match
+      const secI=findScheduleSectionIdx(c.cat);
       let insertIdx=SCHEDULE.length;
-      for(let i=0;i<SCHEDULE.length;i++){
-        if(SCHEDULE[i].section===c.cat){
-          // Find end of this section
-          let j=i+1;
-          while(j<SCHEDULE.length&&!SCHEDULE[j].section) j++;
-          insertIdx=j;
-          break;
-        }
+      if(secI>=0){
+        let j=secI+1;
+        while(j<SCHEDULE.length&&!SCHEDULE[j].section) j++;
+        insertIdx=j;
       }
       SCHEDULE.splice(insertIdx,0,{
         id:'t'+Date.now()+Math.random().toString(36).substr(2,4),
