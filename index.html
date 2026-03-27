@@ -1894,7 +1894,7 @@ function refreshAllViews() {
   buildDashboard();
   renderHolidays();
   updateBudgetLockUI();
-  updateAccessUI();
+  applyAccessMode();
 }
 
 // ============================================================
@@ -1967,7 +1967,7 @@ buildDashboard();
 renderHolidays();
 document.getElementById('exp-date').value=new Date().toISOString().split('T')[0];
 updateBudgetLockUI();
-updateAccessUI();
+applyAccessMode();
 renderComments();
 
 // Initialize Firebase after DOM is ready
