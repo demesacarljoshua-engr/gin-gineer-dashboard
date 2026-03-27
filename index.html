@@ -200,6 +200,10 @@ canvas { width: 100% !important; }
   <div style="display:flex;align-items:center;gap:14px">
     <a href="index.html" style="color:var(--text3);text-decoration:none;font-size:11px;display:inline-flex;align-items:center;gap:5px;padding:6px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;white-space:nowrap" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text3)'">← All Projects</a>
     <div class="page-title" id="pageTitle">Dashboard</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px">
+    <span id="unsaved-badge" style="display:none;font-size:10px;color:var(--accent2);padding:4px 10px;background:rgba(232,132,58,0.1);border:1px solid rgba(232,132,58,0.3);border-radius:5px">● Unsaved changes</span>
+    <button id="save-btn" class="btn btn-success contractor-only" onclick="manualSave()" style="padding:8px 16px;font-size:11px;display:none">💾 Save</button>
   </div><div class="topbar-meta"><span class="status-pill"><span class="dot"></span> <span id="topbar-status">In Progress</span></span><span class="date-badge" id="topbar-date"></span></div></header>
     <div class="access-banner client" id="access-banner">👁 Client View — Dashboard & Schedule only. <a href="#" onclick="toggleAccessMode();return false" style="color:var(--accent);text-decoration:underline">Contractor Login</a></div>
     <div class="content">
@@ -319,34 +323,34 @@ canvas { width: 100% !important; }
 
       <!-- DASHBOARD -->
       <div class="page active" id="page-dashboard">
-        <!-- Project Banner — photo background + description integrated -->
-        <div id="dash-project-banner" style="margin-bottom:20px;border-radius:14px;overflow:hidden;border:1px solid var(--border);position:relative;background:var(--card)">
-          <!-- Photo background layer -->
-          <div id="dash-banner-img" style="display:none;position:absolute;inset:0;background-size:cover;background-position:center;z-index:0">
-            <div style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(13,15,20,0.85) 0%,rgba(13,15,20,0.6) 100%)"></div>
-          </div>
-          <!-- Content over photo -->
-          <div style="position:relative;z-index:1;padding:24px 28px;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:16px">
-            <div style="flex:1;min-width:0">
-              <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:6px">Active Project</div>
-              <h2 id="dash-project-title" style="font-family:Syne,sans-serif;font-weight:700;font-size:22px;margin-bottom:4px;line-height:1.2">24 Bakeshop Store / HQ</h2>
-              <p id="dash-prepared-by" style="font-size:11px;color:var(--text3);margin-bottom:0">Prepared by: Carl Joshua E. De Mesa, Licensed Engineer</p>
-              <p id="dash-project-desc" style="font-size:12px;color:var(--text2);margin-top:10px;line-height:1.6;max-width:600px;display:none;padding:10px 12px;background:rgba(255,255,255,0.05);border-left:2px solid var(--accent);border-radius:0 6px 6px 0"></p>
+        <!-- Project Banner: photo box left, info right -->
+        <div id="dash-project-banner" style="margin-bottom:20px;border-radius:14px;overflow:hidden;border:1px solid var(--border);background:var(--card);display:flex;gap:0">
+          <!-- Photo box — fixed size, shown only when photo exists -->
+          <div id="dash-banner-img" style="display:none;width:200px;min-width:200px;background:var(--bg3);background-size:cover;background-position:center;border-right:1px solid var(--border);flex-shrink:0"></div>
+          <!-- Info panel -->
+          <div style="flex:1;padding:22px 26px;display:flex;flex-direction:column;justify-content:space-between;min-width:0">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap">
+              <div style="flex:1;min-width:0">
+                <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:5px">Active Project</div>
+                <h2 id="dash-project-title" style="font-family:Syne,sans-serif;font-weight:700;font-size:20px;margin-bottom:3px;line-height:1.2">24 Bakeshop Store / HQ</h2>
+                <p id="dash-prepared-by" style="font-size:11px;color:var(--text3);margin-bottom:0">Prepared by: Carl Joshua E. De Mesa, Licensed Engineer</p>
+                <p id="dash-project-desc" style="font-size:12px;color:var(--text2);margin-top:8px;line-height:1.65;display:none"></p>
+              </div>
+              <div style="text-align:right;flex-shrink:0">
+                <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:3px">Contract Value</div>
+                <div id="dash-contract" style="font-family:Syne,sans-serif;font-weight:700;font-size:26px;color:var(--accent);line-height:1">₱3.13M</div>
+                <div id="dash-contract-sub" style="font-size:10px;color:var(--text3);margin-top:3px"></div>
+              </div>
             </div>
-            <div style="text-align:right;flex-shrink:0">
-              <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Contract Value</div>
-              <div id="dash-contract" style="font-family:Syne,sans-serif;font-weight:700;font-size:28px;color:var(--accent);line-height:1">₱3.13M</div>
-              <div id="dash-contract-sub" style="font-size:10px;color:var(--text3);margin-top:3px"></div>
+            <!-- Progress bar -->
+            <div style="display:flex;align-items:center;gap:12px;margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
+              <div style="flex:1;background:var(--bg3);border-radius:4px;height:5px;overflow:hidden">
+                <div id="dash-banner-progress-fill" style="height:100%;border-radius:4px;background:var(--accent3);transition:width 1s ease;width:0%"></div>
+              </div>
+              <span id="dash-banner-progress-label" style="font-family:Syne,sans-serif;font-weight:700;font-size:13px;color:var(--accent3);white-space:nowrap">0%</span>
+              <span id="kpi-progress-sub" style="font-size:10px;color:var(--text3)">overall progress</span>
+              <span id="kpi-progress-main" style="display:none">0%</span>
             </div>
-          </div>
-          <!-- Progress bar at bottom of banner -->
-          <div style="position:relative;z-index:1;padding:0 28px 20px;display:flex;align-items:center;gap:14px">
-            <div style="flex:1;background:rgba(255,255,255,0.1);border-radius:4px;height:6px;overflow:hidden">
-              <div id="dash-banner-progress-fill" style="height:100%;border-radius:4px;background:var(--accent3);transition:width 1s ease;width:0%"></div>
-            </div>
-            <span id="dash-banner-progress-label" style="font-family:Syne,sans-serif;font-weight:700;font-size:14px;color:var(--accent3);white-space:nowrap">0%</span>
-            <span id="kpi-progress-sub" style="font-size:10px;color:var(--text3)">overall progress</span>
-            <span class="kpi-value" id="kpi-progress-main" style="display:none">0%</span>
           </div>
         </div>
 
@@ -755,7 +759,7 @@ function onTitleChange() {
   document.getElementById('dash-project-title').textContent = title;
   const nameEl = document.querySelector('.logo-badge .name');
   if(nameEl) nameEl.textContent = title.length > 16 ? title.substring(0, 16) + '…' : title;
-  saveState();
+  markUnsaved();
 }
 
 function renderDayMap() {
@@ -866,24 +870,26 @@ const SCURVE_PLANNED = [
   {day:41,cPct:95.88},{day:42,cPct:96.11},{day:43,cPct:96.87},{day:44,cPct:98.44},{day:45,cPct:100.00},
 ];
 
-// Schedule tasks — now with date-based targets
+// Schedule tasks — sections have costCat = exact CONTRACT_CATEGORIES name
 const SCHEDULE = [
-  {section:'I. General Requirements'},
+  {section:'General Requirements', costCat:'General Requirements'},
   {id:'t1',name:'Permits & Licenses',note:'By Owner',targetStartDay:0,targetEndDay:0,actualStartDate:null,pctComplete:100,done:true,costCodes:[]},
   {id:'t2',name:'Mobilization',targetStartDay:0,targetEndDay:3,actualStartDate:null,pctComplete:0,costCodes:['GR-001']},
   {id:'t3',name:'Supervision',targetStartDay:0,targetEndDay:45,actualStartDate:null,pctComplete:0,costCodes:['GR-002']},
   {id:'t4',name:'Temporary Facilities',targetStartDay:0,targetEndDay:45,actualStartDate:null,pctComplete:0,costCodes:['GR-003']},
   {id:'t5',name:'Hauling',targetStartDay:43,targetEndDay:45,actualStartDate:null,pctComplete:0,costCodes:['GR-004']},
   {id:'t6',name:'Demobilization',targetStartDay:44,targetEndDay:45,actualStartDate:null,pctComplete:0,costCodes:['GR-005']},
-  {section:'II. Drywall / Partition'},
+  {section:'Drywall / Doors & Windows', costCat:'Drywall / Doors & Windows'},
   {id:'t7',name:'Gypsum Board on Metal Studs',targetStartDay:6,targetEndDay:19,actualStartDate:null,pctComplete:0,costCodes:['DW-001']},
   {id:'t8',name:'Fiber Cement Ext. Partition',targetStartDay:6,targetEndDay:15,actualStartDate:null,pctComplete:0,costCodes:['DW-002']},
   {id:'t9',name:'CHB Zocalo',targetStartDay:6,targetEndDay:12,actualStartDate:null,pctComplete:0,costCodes:['DW-003']},
   {id:'t10',name:'Plant Box',targetStartDay:8,targetEndDay:12,actualStartDate:null,pctComplete:0,costCodes:['DW-004']},
-  {section:'III. Ceiling Works'},
+  {id:'t26',name:'Doors',targetStartDay:30,targetEndDay:34,actualStartDate:null,pctComplete:0,costCodes:['DW-101']},
+  {id:'t27',name:'Windows, Glass & Glazing',targetStartDay:30,targetEndDay:34,actualStartDate:null,pctComplete:0,costCodes:['DW-102']},
+  {section:'Ceiling Works', costCat:'Ceiling Works'},
   {id:'t11',name:'Internal Ceiling / Custom',targetStartDay:6,targetEndDay:15,actualStartDate:null,pctComplete:0,costCodes:['CW-001']},
   {id:'t12',name:'Plain Ceiling',targetStartDay:20,targetEndDay:24,actualStartDate:null,pctComplete:0,costCodes:['CW-002']},
-  {section:'IV. Carpentry Works'},
+  {section:'Carpentry Works', costCat:'Carpentry Works'},
   {id:'t13',name:'Bar Counter w/ Laminate Top',targetStartDay:23,targetEndDay:28,actualStartDate:null,pctComplete:0,costCodes:['CP-001']},
   {id:'t14',name:'Curved Cupboards',targetStartDay:23,targetEndDay:27,actualStartDate:null,pctComplete:0,costCodes:['CP-002']},
   {id:'t15',name:'Mini Open Shelving',targetStartDay:28,targetEndDay:31,actualStartDate:null,pctComplete:0,costCodes:['CP-003']},
@@ -893,23 +899,22 @@ const SCHEDULE = [
   {id:'t19',name:'Open Shelving - Staff Storage',targetStartDay:29,targetEndDay:33,actualStartDate:null,pctComplete:0,costCodes:['CP-007']},
   {id:'t19b',name:'Office Console',targetStartDay:29,targetEndDay:33,actualStartDate:null,pctComplete:0,costCodes:['CP-008']},
   {id:'t19c',name:'Cart - Mini Store',targetStartDay:29,targetEndDay:33,actualStartDate:null,pctComplete:0,costCodes:['CP-009']},
-  {section:'V. Floor Finishes'},
+  {section:'Floor Finishes', costCat:'Floor Finishes'},
   {id:'t20',name:'Homogenous Floor Tiles (OSM)',targetStartDay:20,targetEndDay:26,actualStartDate:null,pctComplete:0,costCodes:['FL-001']},
   {id:'t21',name:'Waterproofing - Wet Area',targetStartDay:15,targetEndDay:19,actualStartDate:null,pctComplete:0,costCodes:['FL-002']},
   {id:'t22',name:'Waterproofing - Dry Area',targetStartDay:15,targetEndDay:17,actualStartDate:null,pctComplete:0,costCodes:['FL-003']},
-  {section:'VI. Wall & Ceiling Finishes'},
+  {section:'Wall Finishes', costCat:'Wall Finishes'},
   {id:'t23',name:'Painted Finishes - Kitchen',targetStartDay:30,targetEndDay:39,actualStartDate:null,pctComplete:0,costCodes:['WF-001']},
   {id:'t23b',name:'Painted Finishes - Office',targetStartDay:30,targetEndDay:39,actualStartDate:null,pctComplete:0,costCodes:['WF-002']},
   {id:'t23c',name:'Painted Finishes - Bar',targetStartDay:30,targetEndDay:39,actualStartDate:null,pctComplete:0,costCodes:['WF-003']},
   {id:'t23d',name:'Painted Finishes - Dining',targetStartDay:30,targetEndDay:39,actualStartDate:null,pctComplete:0,costCodes:['WF-004']},
   {id:'t23e',name:'Painted Finishes - Exterior',targetStartDay:30,targetEndDay:39,actualStartDate:null,pctComplete:0,costCodes:['WF-005']},
   {id:'t24',name:'Wall Tiles (OSM)',targetStartDay:20,targetEndDay:24,actualStartDate:null,pctComplete:0,costCodes:['WF-006']},
+  {section:'Ceiling Finishes', costCat:'Ceiling Finishes'},
   {id:'t25',name:'Painted Finish - Ceiling',targetStartDay:35,targetEndDay:39,actualStartDate:null,pctComplete:0,costCodes:['CF-001']},
-  {section:'VII. Doors & Windows'},
-  {id:'t26',name:'Doors',targetStartDay:30,targetEndDay:34,actualStartDate:null,pctComplete:0,costCodes:['DW-101']},
-  {id:'t27',name:'Windows, Glass & Glazing',targetStartDay:30,targetEndDay:34,actualStartDate:null,pctComplete:0,costCodes:['DW-102']},
-  {section:'VIII. Plumbing & Electrical'},
+  {section:'Plumbing Works', costCat:'Plumbing Works'},
   {id:'t28',name:'Sanitary Line & Fixtures',targetStartDay:15,targetEndDay:21,actualStartDate:null,pctComplete:0,costCodes:['PL-001']},
+  {section:'Electrical Works', costCat:'Electrical Works'},
   {id:'t29',name:'Lighting & Power Fixtures',targetStartDay:35,targetEndDay:41,actualStartDate:null,pctComplete:0,costCodes:['EL-001']},
 ];
 
@@ -918,21 +923,22 @@ let budgetLocked = false, scheduleLocked = false;
 let variationOrders = [], challenges = [];
 let scopeCollapsed = {};
 
-// Find the SCHEDULE index of the section that best matches a contract category name
-// Handles "I. General Requirements" vs "General Requirements" mismatch
+// Find the SCHEDULE index of the section that matches a contract category name
 function findScheduleSectionIdx(catName){
-  const cat=catName.toLowerCase();
-  // Try exact match first (for user-added categories)
-  let idx=SCHEDULE.findIndex(t=>t.section&&t.section===catName);
+  // 1. Exact costCat match (preferred — works with new structure)
+  let idx=SCHEDULE.findIndex(t=>t.section&&t.costCat===catName);
   if(idx>=0) return idx;
-  // Try: section contains all significant words from catName
-  const words=cat.split(/[\s\/&]+/).filter(w=>w.length>3);
+  // 2. Exact section name match (fallback for user-added cats)
+  idx=SCHEDULE.findIndex(t=>t.section&&t.section===catName);
+  if(idx>=0) return idx;
+  // 3. Fuzzy word match (last resort)
+  const words=catName.toLowerCase().split(/\s+/).filter(w=>w.length>3);
   idx=SCHEDULE.findIndex(t=>{
     if(!t.section) return false;
-    const sec=t.section.toLowerCase();
+    const sec=(t.costCat||t.section).toLowerCase();
     return words.some(w=>sec.includes(w));
   });
-  return idx; // -1 if not found
+  return idx;
 }
 
 // ============================================================
@@ -1322,6 +1328,26 @@ function buildDashboard(){
   document.getElementById('kpi-income').className='kpi-value '+(income>=0?'pos':'neg');
   document.getElementById('kpi-income-sub').textContent=marginPct+'% margin';
 
+  // Photo and description
+  const bannerImg = document.getElementById('dash-banner-img');
+  const descEl = document.getElementById('dash-project-desc');
+  if(bannerImg){
+    if(PROJECT.photo){
+      bannerImg.style.backgroundImage = 'url(' + PROJECT.photo + ')';
+      bannerImg.style.display = 'block';
+    } else {
+      bannerImg.style.display = 'none';
+    }
+  }
+  if(descEl){
+    if(PROJECT.description && PROJECT.description.trim()){
+      descEl.textContent = PROJECT.description;
+      descEl.style.display = 'block';
+    } else {
+      descEl.style.display = 'none';
+    }
+  }
+
   // Contractor donuts (safe null-check)
   if(document.getElementById('dash-donut-budget')) buildDonut('dash-donut-budget','dash-budget-legend',[contractBudget,mpBudget,Math.max(0,bt-contractBudget)],['#f5c842','#7c6aff','#252a38'],['Contract Budget','Labor Budget','Unallocated']);
   if(document.getElementById('dash-donut-cash')) buildDonut('dash-donut-cash','dash-cash-legend',[col,tot,Math.max(0,bt-col-tot)],['#4fc3a1','#e85555','#252a38'],['Collected','Spent','Remaining']);
@@ -1370,13 +1396,11 @@ function buildDashboard(){
     } else if(curSec){curSec.tasks.push(t);}
   }
 
-  // Helper: get contract cost for a category directly from COST_CODES_SELLING
-  // This is authoritative — no name matching needed
-  function getCatContractCost(sectionLabel){
-    // Strip roman numeral prefix to get clean category name
-    const clean=sectionLabel.replace(/^[IVXLCDM]+\.\s*/i,'').toLowerCase().trim();
+  // Helper: get contract cost for a category — uses costCat for exact match
+  function getCatContractCost(sec){
+    const catName=sec.costCat||sec.label;
     return COST_CODES_SELLING
-      .filter(c=>!isInternalOnly(c)&&c.cat&&c.cat.toLowerCase().trim()===clean)
+      .filter(c=>!isInternalOnly(c)&&c.cat===catName)
       .reduce((s,c)=>s+(c.selling||0),0);
   }
 
@@ -1387,7 +1411,7 @@ function buildDashboard(){
     const latestEndDay=tasks.length?Math.max(...tasks.map(t=>t.targetEndDay||0)):0;
     const latestEndDate=dayToDate(latestEndDay);
     // Use authoritative category cost from COST_CODES_SELLING directly
-    const catCost=getCatContractCost(sec.label);
+    const catCost=getCatContractCost(sec);
     const catDone=tasks.filter(t=>t.pctComplete>=100).length;
     const catActive=tasks.filter(t=>t.pctComplete>0&&t.pctComplete<100).length;
     let catStC=catDone===tasks.length&&tasks.length>0?'green':catActive>0||catDone>0?'yellow':'gray';
@@ -1712,8 +1736,10 @@ function submitContractCat(){
   if(CONTRACT_CATEGORIES.find(c=>c.name===name)){alert('Category already exists.');return;}
   if(CONTRACT_CATEGORIES.find(c=>c.prefix===prefix)){alert('Prefix already used.');return;}
   CONTRACT_CATEGORIES.push({name,prefix});
-  // Also add a section to SCHEDULE for this category
-  SCHEDULE.push({section:name});
+  // Add section to SCHEDULE with costCat mapping
+  if(!SCHEDULE.some(t=>t.section&&t.costCat===name)){
+    SCHEDULE.push({section:name, costCat:name});
+  }
   closeModal('contract-cat-modal');
   buildContract();autoSave();
 }
@@ -1735,13 +1761,20 @@ function toggleContractLock(){
 }
 
 function rebuildScheduleFromContract(){
-  // Keep existing schedule tasks that match contract items, remove orphans
   const contractItems=COST_CODES_SELLING.filter(c=>!isInternalOnly(c)&&(c.selling||0)>0);
-  // Don't destroy existing schedule — just ensure every contract item has a task
-  const existingNames=new Set(SCHEDULE.filter(t=>t.id).map(t=>t.name));
+
+  // Ensure a section exists for every contract category
+  CONTRACT_CATEGORIES.forEach(cat=>{
+    const hasSection=SCHEDULE.some(t=>t.section&&(t.costCat===cat.name||t.section===cat.name));
+    if(!hasSection) SCHEDULE.push({section:cat.name, costCat:cat.name});
+  });
+
+  // For each contract item, ensure a schedule task exists
+  // Match by costCode first (reliable), then by exact name
   contractItems.forEach(c=>{
-    if(!existingNames.has(c.desc)){
-      // Find appropriate section using fuzzy match
+    const existsByCode=SCHEDULE.some(t=>t.id&&Array.isArray(t.costCodes)&&t.costCodes.includes(c.code));
+    const existsByName=SCHEDULE.some(t=>t.id&&t.name&&t.name.toLowerCase().trim()===c.desc.toLowerCase().trim());
+    if(!existsByCode&&!existsByName){
       const secI=findScheduleSectionIdx(c.cat);
       let insertIdx=SCHEDULE.length;
       if(secI>=0){
@@ -1750,13 +1783,22 @@ function rebuildScheduleFromContract(){
         insertIdx=j;
       }
       SCHEDULE.splice(insertIdx,0,{
-        id:'t'+Date.now()+Math.random().toString(36).substr(2,4),
+        id:'t'+Date.now()+Math.random().toString(36).substr(2,5),
         name:c.desc, costCodes:[c.code],
         targetStartDay:0, targetEndDay:PROJECT.totalDays,
         actualStartDate:null, pctComplete:0
       });
     }
   });
+
+  // Remove orphan tasks whose costCode is no longer in the contract
+  const contractCodes=new Set(contractItems.map(c=>c.code));
+  for(let i=SCHEDULE.length-1;i>=0;i--){
+    const t=SCHEDULE[i];
+    if(t.id&&Array.isArray(t.costCodes)&&t.costCodes.length>0&&!t.costCodes.some(code=>contractCodes.has(code))){
+      SCHEDULE.splice(i,1);
+    }
+  }
 }
 
 function updateContractLockUI(){
@@ -1985,6 +2027,7 @@ function applyAccessMode(){
   const label = document.getElementById('access-label');
   const modeText = document.getElementById('access-mode-text');
   
+  const saveBtn = document.getElementById('save-btn');
   if(accessMode === 'contractor'){
     shell.classList.remove('client-mode');
     banner.className = 'access-banner contractor';
@@ -1993,6 +2036,7 @@ function applyAccessMode(){
     label.textContent = 'Lock Access';
     modeText.textContent = 'Contractor Mode';
     modeText.style.color = 'var(--accent)';
+    if(saveBtn) saveBtn.style.display = 'inline-flex';
   } else {
     shell.classList.add('client-mode');
     banner.className = 'access-banner client';
@@ -2001,12 +2045,25 @@ function applyAccessMode(){
     label.textContent = 'Contractor Login';
     modeText.textContent = 'Client View';
     modeText.style.color = 'var(--text3)';
+    if(saveBtn) saveBtn.style.display = 'none';
   }
 }
 
 function onPasscodeSettingChange(){
   PASSCODE = document.getElementById('set-passcode').value || '0000';
-  autoSave();
+  markUnsaved();
+}
+
+function markUnsaved(){
+  const badge = document.getElementById('unsaved-badge');
+  if(badge) badge.style.display = 'inline-flex';
+}
+
+function manualSave(){
+  saveState();
+  buildDashboard();
+  const badge = document.getElementById('unsaved-badge');
+  if(badge) badge.style.display = 'none';
 }
 
 function onClientPasscodeSettingChange(){
@@ -2064,7 +2121,7 @@ function updateCommentUI(){
 
 function onDescChange(){
   PROJECT.description = document.getElementById('set-project-desc').value || '';
-  autoSave();
+  markUnsaved();
 }
 
 function onPhotoUpload(input){
@@ -2083,7 +2140,7 @@ function onPhotoUpload(input){
 function removePhoto(){
   PROJECT.photo = null;
   updatePhotoPreview();
-  autoSave();
+  markUnsaved();
 }
 
 function updatePhotoPreview(){
@@ -2225,7 +2282,52 @@ function applyState(s) {
     }
     if(s.costCodesSelling) { COST_CODES_SELLING.length=0; s.costCodesSelling.forEach(c=>COST_CODES_SELLING.push(c)); }
     if(s.costCodesBudget) { COST_CODES_BUDGET.length=0; s.costCodesBudget.forEach(c=>COST_CODES_BUDGET.push(c)); }
-    if(s.schedule) { SCHEDULE.length=0; s.schedule.forEach(t=>SCHEDULE.push(t)); }
+    if(s.schedule) {
+      SCHEDULE.length=0;
+      // Category name migration map (old roman numeral → costCat)
+      const sectionMigration={
+        'I. General Requirements':'General Requirements',
+        'II. Drywall / Partition':'Drywall / Doors & Windows',
+        'III. Ceiling Works':'Ceiling Works',
+        'IV. Carpentry Works':'Carpentry Works',
+        'V. Floor Finishes':'Floor Finishes',
+        'VI. Wall & Ceiling Finishes':'Wall Finishes',
+        'VII. Doors & Windows':'Drywall / Doors & Windows',
+        'VIII. Plumbing & Electrical':'Plumbing Works',
+      };
+      s.schedule.forEach(t=>{
+        if(t.section&&!t.costCat){
+          // Migrate old section name to new costCat format
+          t.costCat=sectionMigration[t.section]||t.section;
+          t.section=t.costCat;
+        }
+        SCHEDULE.push(t);
+      });
+      // Remove duplicate sections for same costCat (e.g. old VII. Doors & Windows merged into DW)
+      const seenCats=new Set();
+      for(let i=SCHEDULE.length-1;i>=0;i--){
+        if(SCHEDULE[i].section){
+          const cat=SCHEDULE[i].costCat||SCHEDULE[i].section;
+          if(seenCats.has(cat)){
+            // Merge tasks from this duplicate section into the first one
+            let j=i+1;
+            while(j<SCHEDULE.length&&!SCHEDULE[j].section){
+              const task=SCHEDULE.splice(j,1)[0];
+              // Find the first section with this cat and insert after its tasks
+              const firstSecIdx=SCHEDULE.findIndex(t=>t.section&&(t.costCat||t.section)===cat);
+              if(firstSecIdx>=0){
+                let ins=firstSecIdx+1;
+                while(ins<SCHEDULE.length&&!SCHEDULE[ins].section)ins++;
+                SCHEDULE.splice(ins,0,task);
+              }
+            }
+            SCHEDULE.splice(i,1);
+          } else {
+            seenCats.add(cat);
+          }
+        }
+      }
+    }
     if(s.milestones) { s.milestones.forEach((m,i)=>{ if(MILESTONES[i]) Object.assign(MILESTONES[i], m); }); }
     if(s.expenses) { expenses.length=0; s.expenses.forEach(e=>expenses.push(e)); }
     if(s.variationOrders) { variationOrders.length=0; s.variationOrders.forEach(v=>variationOrders.push(v)); }
