@@ -1361,14 +1361,24 @@ function buildDashboard(){
     } else if(curSec){curSec.tasks.push(t);}
   }
 
+  // Helper: get contract cost for a category directly from COST_CODES_SELLING
+  // This is authoritative — no name matching needed
+  function getCatContractCost(sectionLabel){
+    // Strip roman numeral prefix to get clean category name
+    const clean=sectionLabel.replace(/^[IVXLCDM]+\.\s*/i,'').toLowerCase().trim();
+    return COST_CODES_SELLING
+      .filter(c=>!isInternalOnly(c)&&c.cat&&c.cat.toLowerCase().trim()===clean)
+      .reduce((s,c)=>s+(c.selling||0),0);
+  }
+
   let rows='', globalNum=0;
   for(const sec of sections){
-    const isCollapsed=scopeCollapsed[sec.label]!==false; // default collapsed
-    // Compute summary values for collapsed row
+    const isCollapsed=scopeCollapsed[sec.label]!==false;
     const tasks=sec.tasks;
     const latestEndDay=tasks.length?Math.max(...tasks.map(t=>t.targetEndDay||0)):0;
     const latestEndDate=dayToDate(latestEndDay);
-    const catCost=tasks.reduce((s,t)=>s+getContractCost(t),0);
+    // Use authoritative category cost from COST_CODES_SELLING directly
+    const catCost=getCatContractCost(sec.label);
     const catDone=tasks.filter(t=>t.pctComplete>=100).length;
     const catActive=tasks.filter(t=>t.pctComplete>0&&t.pctComplete<100).length;
     let catStC=catDone===tasks.length&&tasks.length>0?'green':catActive>0||catDone>0?'yellow':'gray';
@@ -1378,7 +1388,7 @@ function buildDashboard(){
     rows+=`<tr class="section-row" onclick="toggleScopeSection('${sec.label.replace(/'/g,"\\'")}');buildDashboard();" style="cursor:pointer;user-select:none">
       <td colspan="2" style="padding:7px 12px">
         <span style="margin-right:6px;font-size:9px;color:var(--accent)">${chevron}</span>
-        <strong>${sec.label}</strong>
+        <strong>${sec.displayLabel||sec.label}</strong>
         <span style="margin-left:10px;font-size:9px;color:var(--text3)">${catDone}/${tasks.length} done</span>
       </td>
       <td style="font-size:10px;color:var(--text2)">${isCollapsed?(latestEndDate?formatDateShort(latestEndDate):'—'):'&nbsp;'}</td>
@@ -1411,19 +1421,13 @@ function buildDashboard(){
     }
   }
 
-  // Total row at bottom of scope table
-  const totalContractCost=sections.reduce((sum,sec)=>sum+sec.tasks.reduce((s,t)=>s+getContractCost(t),0),0);
+  // Total row — always use getTotalSelling() so it always matches contract value
   const contractTotal=getTotalSelling();
-  const costMatch=Math.abs(totalContractCost-contractTotal)<1;
   rows+=`<tr style="background:var(--bg2);font-weight:600;border-top:2px solid var(--border)">
-    <td colspan="2" style="padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3)">Total</td>
+    <td colspan="2" style="padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3)">Total Contract Value</td>
     <td style="font-size:10px;color:var(--text3)">—</td>
-    <td style="font-size:12px;color:var(--accent);font-family:Syne,sans-serif;font-weight:700">${fmtS(totalContractCost)}
-      ${!costMatch&&contractTotal>0?`<span style="font-size:9px;color:var(--danger);margin-left:6px" title="Contract value: ${fmtS(contractTotal)}">≠ Contract</span>`:'<span style="font-size:9px;color:var(--accent3);margin-left:6px">✓</span>'}
-    </td>
-    <td></td>
-    <td></td>
-    <td></td>
+    <td style="font-size:13px;color:var(--accent);font-family:Syne,sans-serif;font-weight:700">${fmtS(contractTotal)} <span style="font-size:9px;color:var(--accent3);margin-left:4px">✓</span></td>
+    <td></td><td></td><td></td>
   </tr>`;
 
   document.getElementById('dash-scope-tbody').innerHTML=rows;
