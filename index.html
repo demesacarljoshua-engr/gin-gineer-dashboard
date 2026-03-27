@@ -2127,12 +2127,23 @@ function onDescChange(){
 function onPhotoUpload(input){
   const file = input.files[0];
   if(!file) return;
-  if(file.size > 2 * 1024 * 1024){ alert('Photo too large. Please use an image under 2MB.'); return; }
+  if(file.size > 10 * 1024 * 1024){ alert('Photo too large. Max 10MB.'); return; }
   const reader = new FileReader();
   reader.onload = e => {
-    PROJECT.photo = e.target.result;
-    updatePhotoPreview();
-    autoSave();
+    const img = new Image();
+    img.onload = () => {
+      // Compress: max 800px wide, JPEG at 65% quality
+      const MAX = 800;
+      let w = img.width, h = img.height;
+      if(w > MAX){ h = Math.round(h * MAX / w); w = MAX; }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      PROJECT.photo = canvas.toDataURL('image/jpeg', 0.65);
+      updatePhotoPreview();
+      markUnsaved();
+    };
+    img.src = e.target.result;
   };
   reader.readAsDataURL(file);
 }
@@ -2212,8 +2223,10 @@ let clientComments = [];
 const SAVE_KEY = '24bs_project_data_' + PROJECT_ID + '_v3';
 
 function getStateObject() {
+  // Strip photo from main state — stored separately to keep sync fast
+  const projectWithoutPhoto = Object.assign({}, PROJECT, {photo: null});
   return {
-    project: PROJECT,
+    project: projectWithoutPhoto,
     costCodesSelling: COST_CODES_SELLING,
     costCodesBudget: COST_CODES_BUDGET,
     schedule: SCHEDULE,
@@ -2235,13 +2248,26 @@ function getStateObject() {
 function saveState() {
   try {
     const state = getStateObject();
-    // Always save to localStorage as backup
-    localStorage.setItem(SAVE_KEY, JSON.stringify(state));
-    // Save to Firebase if connected
+    // Build full state with photo for localStorage (local is fast, no size limit concern)
+    const localState = Object.assign({}, state, {
+      project: Object.assign({}, state.project, {
+        photo: PROJECT.photo || null,
+        description: PROJECT.description || ''
+      })
+    });
+    localStorage.setItem(SAVE_KEY, JSON.stringify(localState));
+
+    // Save to Firebase — photo goes to a separate /photo node to avoid bloating every sync
     if(firebaseReady && dbRef) {
       dbRef.set(state).then(()=>{
         flashSaved('☁ Synced');
-        // Also sync key metrics to meta so the hub can display them
+        // Save photo separately (only if changed, large payload)
+        if(PROJECT.photo && metaRef) {
+          metaRef.child('photo').set(PROJECT.photo).catch(e=>console.warn('Photo save failed:',e));
+        } else if(!PROJECT.photo && metaRef) {
+          metaRef.child('photo').remove();
+        }
+        // Sync key metrics for hub
         if(metaRef) {
           const tasks = SCHEDULE.filter(t=>!t.section);
           const prog = tasks.length ? Math.round(tasks.reduce((s,t)=>s+(t.pctComplete||0),0)/tasks.length) : 0;
@@ -2428,6 +2454,15 @@ function initFirebase() {
         applyState(data);
         refreshAllViews();
         console.log('Loaded from Firebase (live)');
+      }
+      // Load photo separately (non-blocking, after main data)
+      return metaRef.child('photo').once('value');
+    }).then(photoSnap => {
+      const photo = photoSnap.val();
+      if(photo) {
+        PROJECT.photo = photo;
+        updatePhotoPreview();
+        buildDashboard();
       }
     });
 
