@@ -869,42 +869,48 @@ const SCURVE_PLANNED = [
 // Schedule tasks — now with date-based targets
 const SCHEDULE = [
   {section:'I. General Requirements'},
-  {id:'t1',name:'Permits & Licenses',note:'By Owner',targetStartDay:0,targetEndDay:0,actualStartDate:null,pctComplete:100,done:true},
-  {id:'t2',name:'Mobilization',targetStartDay:0,targetEndDay:3,actualStartDate:null,pctComplete:0},
-  {id:'t3',name:'Supervision',targetStartDay:0,targetEndDay:45,actualStartDate:null,pctComplete:0},
-  {id:'t4',name:'Temporary Facilities',targetStartDay:0,targetEndDay:45,actualStartDate:null,pctComplete:0},
-  {id:'t5',name:'Hauling',targetStartDay:43,targetEndDay:45,actualStartDate:null,pctComplete:0},
-  {id:'t6',name:'Demobilization',targetStartDay:44,targetEndDay:45,actualStartDate:null,pctComplete:0},
+  {id:'t1',name:'Permits & Licenses',note:'By Owner',targetStartDay:0,targetEndDay:0,actualStartDate:null,pctComplete:100,done:true,costCodes:[]},
+  {id:'t2',name:'Mobilization',targetStartDay:0,targetEndDay:3,actualStartDate:null,pctComplete:0,costCodes:['GR-001']},
+  {id:'t3',name:'Supervision',targetStartDay:0,targetEndDay:45,actualStartDate:null,pctComplete:0,costCodes:['GR-002']},
+  {id:'t4',name:'Temporary Facilities',targetStartDay:0,targetEndDay:45,actualStartDate:null,pctComplete:0,costCodes:['GR-003']},
+  {id:'t5',name:'Hauling',targetStartDay:43,targetEndDay:45,actualStartDate:null,pctComplete:0,costCodes:['GR-004']},
+  {id:'t6',name:'Demobilization',targetStartDay:44,targetEndDay:45,actualStartDate:null,pctComplete:0,costCodes:['GR-005']},
   {section:'II. Drywall / Partition'},
-  {id:'t7',name:'Gypsum Board on Metal Studs',targetStartDay:6,targetEndDay:19,actualStartDate:null,pctComplete:0},
-  {id:'t8',name:'Fiber Cement Ext. Partition',targetStartDay:6,targetEndDay:15,actualStartDate:null,pctComplete:0},
-  {id:'t9',name:'CHB Zocalo',targetStartDay:6,targetEndDay:12,actualStartDate:null,pctComplete:0},
-  {id:'t10',name:'Plant Box',targetStartDay:8,targetEndDay:12,actualStartDate:null,pctComplete:0},
+  {id:'t7',name:'Gypsum Board on Metal Studs',targetStartDay:6,targetEndDay:19,actualStartDate:null,pctComplete:0,costCodes:['DW-001']},
+  {id:'t8',name:'Fiber Cement Ext. Partition',targetStartDay:6,targetEndDay:15,actualStartDate:null,pctComplete:0,costCodes:['DW-002']},
+  {id:'t9',name:'CHB Zocalo',targetStartDay:6,targetEndDay:12,actualStartDate:null,pctComplete:0,costCodes:['DW-003']},
+  {id:'t10',name:'Plant Box',targetStartDay:8,targetEndDay:12,actualStartDate:null,pctComplete:0,costCodes:['DW-004']},
   {section:'III. Ceiling Works'},
-  {id:'t11',name:'Internal Ceiling / Custom',targetStartDay:6,targetEndDay:15,actualStartDate:null,pctComplete:0},
-  {id:'t12',name:'Plain Ceiling',targetStartDay:20,targetEndDay:24,actualStartDate:null,pctComplete:0},
+  {id:'t11',name:'Internal Ceiling / Custom',targetStartDay:6,targetEndDay:15,actualStartDate:null,pctComplete:0,costCodes:['CW-001']},
+  {id:'t12',name:'Plain Ceiling',targetStartDay:20,targetEndDay:24,actualStartDate:null,pctComplete:0,costCodes:['CW-002']},
   {section:'IV. Carpentry Works'},
-  {id:'t13',name:'Bar Counter (Install)',targetStartDay:23,targetEndDay:28,actualStartDate:null,pctComplete:0},
-  {id:'t14',name:'Curved Cupboards',targetStartDay:23,targetEndDay:27,actualStartDate:null,pctComplete:0},
-  {id:'t15',name:'Mini Open Shelving',targetStartDay:28,targetEndDay:31,actualStartDate:null,pctComplete:0},
-  {id:'t16',name:'Brass Wall Finish',targetStartDay:28,targetEndDay:33,actualStartDate:null,pctComplete:0},
-  {id:'t17',name:'Bench w/ Tables Interior',targetStartDay:28,targetEndDay:33,actualStartDate:null,pctComplete:0},
-  {id:'t18',name:'Bench Exterior w/ Tables',targetStartDay:29,targetEndDay:32,actualStartDate:null,pctComplete:0},
-  {id:'t19',name:'Open Shelving Staff',targetStartDay:29,targetEndDay:33,actualStartDate:null,pctComplete:0},
+  {id:'t13',name:'Bar Counter w/ Laminate Top',targetStartDay:23,targetEndDay:28,actualStartDate:null,pctComplete:0,costCodes:['CP-001']},
+  {id:'t14',name:'Curved Cupboards',targetStartDay:23,targetEndDay:27,actualStartDate:null,pctComplete:0,costCodes:['CP-002']},
+  {id:'t15',name:'Mini Open Shelving',targetStartDay:28,targetEndDay:31,actualStartDate:null,pctComplete:0,costCodes:['CP-003']},
+  {id:'t16',name:'Brass Wall Finish',targetStartDay:28,targetEndDay:33,actualStartDate:null,pctComplete:0,costCodes:['CP-004']},
+  {id:'t17',name:'Bench w/ Tables (Interior)',targetStartDay:28,targetEndDay:33,actualStartDate:null,pctComplete:0,costCodes:['CP-005']},
+  {id:'t18',name:'Bench Exterior w/ Tables',targetStartDay:29,targetEndDay:32,actualStartDate:null,pctComplete:0,costCodes:['CP-006']},
+  {id:'t19',name:'Open Shelving - Staff Storage',targetStartDay:29,targetEndDay:33,actualStartDate:null,pctComplete:0,costCodes:['CP-007']},
+  {id:'t19b',name:'Office Console',targetStartDay:29,targetEndDay:33,actualStartDate:null,pctComplete:0,costCodes:['CP-008']},
+  {id:'t19c',name:'Cart - Mini Store',targetStartDay:29,targetEndDay:33,actualStartDate:null,pctComplete:0,costCodes:['CP-009']},
   {section:'V. Floor Finishes'},
-  {id:'t20',name:'Floor Tiles (OSM)',targetStartDay:20,targetEndDay:26,actualStartDate:null,pctComplete:0},
-  {id:'t21',name:'Waterproofing - Wet',targetStartDay:15,targetEndDay:19,actualStartDate:null,pctComplete:0},
-  {id:'t22',name:'Waterproofing - Dry',targetStartDay:15,targetEndDay:17,actualStartDate:null,pctComplete:0},
+  {id:'t20',name:'Homogenous Floor Tiles (OSM)',targetStartDay:20,targetEndDay:26,actualStartDate:null,pctComplete:0,costCodes:['FL-001']},
+  {id:'t21',name:'Waterproofing - Wet Area',targetStartDay:15,targetEndDay:19,actualStartDate:null,pctComplete:0,costCodes:['FL-002']},
+  {id:'t22',name:'Waterproofing - Dry Area',targetStartDay:15,targetEndDay:17,actualStartDate:null,pctComplete:0,costCodes:['FL-003']},
   {section:'VI. Wall & Ceiling Finishes'},
-  {id:'t23',name:'Painted Finishes (All)',targetStartDay:30,targetEndDay:39,actualStartDate:null,pctComplete:0},
-  {id:'t24',name:'Wall Tiles (OSM)',targetStartDay:20,targetEndDay:24,actualStartDate:null,pctComplete:0},
-  {id:'t25',name:'Ceiling Paint Finish',targetStartDay:35,targetEndDay:39,actualStartDate:null,pctComplete:0},
+  {id:'t23',name:'Painted Finishes - Kitchen',targetStartDay:30,targetEndDay:39,actualStartDate:null,pctComplete:0,costCodes:['WF-001']},
+  {id:'t23b',name:'Painted Finishes - Office',targetStartDay:30,targetEndDay:39,actualStartDate:null,pctComplete:0,costCodes:['WF-002']},
+  {id:'t23c',name:'Painted Finishes - Bar',targetStartDay:30,targetEndDay:39,actualStartDate:null,pctComplete:0,costCodes:['WF-003']},
+  {id:'t23d',name:'Painted Finishes - Dining',targetStartDay:30,targetEndDay:39,actualStartDate:null,pctComplete:0,costCodes:['WF-004']},
+  {id:'t23e',name:'Painted Finishes - Exterior',targetStartDay:30,targetEndDay:39,actualStartDate:null,pctComplete:0,costCodes:['WF-005']},
+  {id:'t24',name:'Wall Tiles (OSM)',targetStartDay:20,targetEndDay:24,actualStartDate:null,pctComplete:0,costCodes:['WF-006']},
+  {id:'t25',name:'Painted Finish - Ceiling',targetStartDay:35,targetEndDay:39,actualStartDate:null,pctComplete:0,costCodes:['CF-001']},
   {section:'VII. Doors & Windows'},
-  {id:'t26',name:'Doors',targetStartDay:30,targetEndDay:34,actualStartDate:null,pctComplete:0},
-  {id:'t27',name:'Windows & Glazing',targetStartDay:30,targetEndDay:34,actualStartDate:null,pctComplete:0},
+  {id:'t26',name:'Doors',targetStartDay:30,targetEndDay:34,actualStartDate:null,pctComplete:0,costCodes:['DW-101']},
+  {id:'t27',name:'Windows, Glass & Glazing',targetStartDay:30,targetEndDay:34,actualStartDate:null,pctComplete:0,costCodes:['DW-102']},
   {section:'VIII. Plumbing & Electrical'},
-  {id:'t28',name:'Sanitary Line & Fixtures',targetStartDay:15,targetEndDay:21,actualStartDate:null,pctComplete:0},
-  {id:'t29',name:'Lighting & Power (OSM)',targetStartDay:35,targetEndDay:41,actualStartDate:null,pctComplete:0},
+  {id:'t28',name:'Sanitary Line & Fixtures',targetStartDay:15,targetEndDay:21,actualStartDate:null,pctComplete:0,costCodes:['PL-001']},
+  {id:'t29',name:'Lighting & Power Fixtures',targetStartDay:35,targetEndDay:41,actualStartDate:null,pctComplete:0,costCodes:['EL-001']},
 ];
 
 let expenses = [];
@@ -1301,8 +1307,13 @@ function buildDashboard(){
   const col=MILESTONES.filter(m=>m.paid).reduce((s,m)=>s+m.amount,0);
 
   // KPIs
-  document.getElementById('dash-contract').textContent='₱'+(bt/1e6).toFixed(2)+'M';
-  document.getElementById('dash-contract-sub').textContent=fmtS(bt)+' · VAT Excl.';
+  // Contract value — show locked value vs draft clearly
+  const displayVal = getTotalSelling();
+  document.getElementById('dash-contract').textContent = displayVal > 0 ? '₱'+(displayVal/1e6).toFixed(2)+'M' : '—';
+  document.getElementById('dash-contract').style.color = contractLocked ? 'var(--accent)' : 'var(--accent2)';
+  document.getElementById('dash-contract-sub').innerHTML = contractLocked
+    ? `${fmtS(displayVal)} · VAT Excl. <span style="color:var(--accent3);margin-left:4px">🔒 Locked</span>`
+    : `${displayVal>0?fmtS(displayVal)+' ·':''} <span style="color:var(--accent2)">⚠ Contract not yet locked</span>`;
   document.getElementById('kpi-progress-main').textContent=projPct.toFixed(1)+'%';
   document.getElementById('kpi-progress-sub').textContent=done+' done, '+active+' active of '+tasks.length;
   document.getElementById('kpi-actual').textContent=fmtS(tot);
@@ -1327,25 +1338,23 @@ function buildDashboard(){
   // Scope — collapsible categories
   document.getElementById('dash-scope-summary').textContent=done+' done · '+active+' active · '+pending+' pending';
 
-  // Helper: get contract cost for a task — exact match first, then fuzzy
+  // Helper: get contract cost for a task
+  // Priority 1: costCodes array (exact code lookup — always accurate)
+  // Priority 2: fuzzy name match (for user-added tasks without costCodes)
   function getContractCost(task){
     if(!task.name) return 0;
+    // Use costCodes array if present
+    if(task.costCodes&&task.costCodes.length>0){
+      return task.costCodes.reduce((sum,code)=>{
+        const cc=COST_CODES_SELLING.find(c=>c.code===code&&!isInternalOnly(c));
+        return sum+(cc?(cc.selling||0):0);
+      },0);
+    }
+    // Fallback fuzzy for user-added tasks (no costCodes field)
     const tn=task.name.toLowerCase().trim();
-    // 1. Exact match
     let cc=COST_CODES_SELLING.find(c=>!isInternalOnly(c)&&c.desc&&c.desc.toLowerCase().trim()===tn);
-    if(!cc){
-      // 2. Task name contains cost code desc
-      cc=COST_CODES_SELLING.find(c=>!isInternalOnly(c)&&c.desc&&tn.includes(c.desc.toLowerCase().trim()));
-    }
-    if(!cc){
-      // 3. Cost code desc contains task name
-      cc=COST_CODES_SELLING.find(c=>!isInternalOnly(c)&&c.desc&&c.desc.toLowerCase().trim().includes(tn));
-    }
-    if(!cc){
-      // 4. First significant word match (3+ chars)
-      const words=tn.split(/\s+/).filter(w=>w.length>=4);
-      cc=COST_CODES_SELLING.find(c=>!isInternalOnly(c)&&c.desc&&words.some(w=>c.desc.toLowerCase().includes(w)));
-    }
+    if(!cc) cc=COST_CODES_SELLING.find(c=>!isInternalOnly(c)&&c.desc&&tn.includes(c.desc.toLowerCase().trim()));
+    if(!cc) cc=COST_CODES_SELLING.find(c=>!isInternalOnly(c)&&c.desc&&c.desc.toLowerCase().trim().includes(tn));
     return cc?(cc.selling||0):0;
   }
 
@@ -1679,7 +1688,7 @@ function submitContractItem(){
         SCHEDULE.push({section:catName});
         insertIdx=SCHEDULE.length;
       }
-      SCHEDULE.splice(insertIdx,0,{id:taskId,name:desc,targetStartDay:0,targetEndDay:PROJECT.totalDays,actualStartDate:null,pctComplete:0});
+      SCHEDULE.splice(insertIdx,0,{id:taskId,name:desc,targetStartDay:0,targetEndDay:PROJECT.totalDays,actualStartDate:null,pctComplete:0,costCodes:[code]});
     }
   }
 
@@ -1742,7 +1751,7 @@ function rebuildScheduleFromContract(){
       }
       SCHEDULE.splice(insertIdx,0,{
         id:'t'+Date.now()+Math.random().toString(36).substr(2,4),
-        name:c.desc,
+        name:c.desc, costCodes:[c.code],
         targetStartDay:0, targetEndDay:PROJECT.totalDays,
         actualStartDate:null, pctComplete:0
       });
