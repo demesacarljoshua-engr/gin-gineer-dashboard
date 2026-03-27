@@ -2255,7 +2255,14 @@ function saveState() {
         description: PROJECT.description || ''
       })
     });
-    localStorage.setItem(SAVE_KEY, JSON.stringify(localState));
+    try {
+      localStorage.setItem(SAVE_KEY, JSON.stringify(localState));
+    } catch(e) {
+      // localStorage quota exceeded (photo too large) — save without photo
+      console.warn('localStorage quota exceeded, saving without photo');
+      const stateNoPhoto = Object.assign({}, localState, { project: Object.assign({}, localState.project, {photo: null}) });
+      localStorage.setItem(SAVE_KEY, JSON.stringify(stateNoPhoto));
+    }
 
     // Save to Firebase — photo goes to a separate /photo node to avoid bloating every sync
     if(firebaseReady && dbRef) {
@@ -2432,12 +2439,13 @@ function initFirebase() {
 
     // Listen for real-time data changes (for client viewers)
     dbRef.on('value', (snapshot) => {
-      const data = snapshot.val();
-      if(data && accessMode === 'client') {
-        // Auto-refresh for client viewers
-        applyState(data);
-        refreshAllViews();
-      }
+      try {
+        const data = snapshot.val();
+        if(data && accessMode === 'client') {
+          applyState(data);
+          refreshAllViews();
+        }
+      } catch(e) { console.warn('Live update error:', e); }
     });
 
     // Listen for comments
@@ -2453,17 +2461,27 @@ function initFirebase() {
       if(data) {
         applyState(data);
         refreshAllViews();
+        // Restore photo from old embedded location if present
+        if(data.project && data.project.photo && !PROJECT.photo) {
+          PROJECT.photo = data.project.photo;
+          updatePhotoPreview();
+          buildDashboard();
+        }
         console.log('Loaded from Firebase (live)');
       }
-      // Load photo separately (non-blocking, after main data)
-      return metaRef.child('photo').once('value');
+      // Load photo from separate node (non-blocking)
+      if(metaRef) return metaRef.child('photo').once('value');
+      return Promise.resolve(null);
     }).then(photoSnap => {
+      if(!photoSnap) return;
       const photo = photoSnap.val();
       if(photo) {
         PROJECT.photo = photo;
         updatePhotoPreview();
         buildDashboard();
       }
+    }).catch(e => {
+      console.warn('Firebase load error:', e);
     });
 
   } catch(e) {
