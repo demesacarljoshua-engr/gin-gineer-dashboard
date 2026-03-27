@@ -196,7 +196,11 @@ canvas { width: 100% !important; }
     <div class="sidebar-footer"><div class="project-tag"><div class="label">Contract</div><div class="value" id="sidebar-contract">₱3,126,515.20</div><div class="label" style="margin-top:6px">Duration</div><div class="value" id="sidebar-dur">45 Working Days</div></div></div>
   </aside>
   <div class="main">
-    <header class="topbar"><div class="page-title" id="pageTitle">Dashboard</div><div class="topbar-meta"><span class="status-pill"><span class="dot"></span> <span id="topbar-status">In Progress</span></span><span class="date-badge" id="topbar-date"></span></div></header>
+    <header class="topbar">
+  <div style="display:flex;align-items:center;gap:14px">
+    <a href="index.html" style="color:var(--text3);text-decoration:none;font-size:11px;display:inline-flex;align-items:center;gap:5px;padding:6px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;white-space:nowrap" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text3)'">← All Projects</a>
+    <div class="page-title" id="pageTitle">Dashboard</div>
+  </div><div class="topbar-meta"><span class="status-pill"><span class="dot"></span> <span id="topbar-status">In Progress</span></span><span class="date-badge" id="topbar-date"></span></div></header>
     <div class="access-banner client" id="access-banner">👁 Client View — Dashboard & Schedule only. <a href="#" onclick="toggleAccessMode();return false" style="color:var(--accent);text-decoration:underline">Contractor Login</a></div>
     <div class="content">
 
@@ -207,6 +211,25 @@ canvas { width: 100% !important; }
           <div class="settings-card" style="grid-column:1/-1">
             <label>Project Title</label>
             <input type="text" id="set-project-title" value="24 Bakeshop Store / HQ" oninput="onTitleChange()">
+          </div>
+          <div class="settings-card" style="grid-column:1/-1">
+            <label>Project Description (shown on dashboard)</label>
+            <textarea id="set-project-desc" rows="2" placeholder="Brief description of the project scope, location, or notes for the client..." oninput="onDescChange()" style="background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:9px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;outline:none;width:100%;resize:vertical;min-height:60px"></textarea>
+          </div>
+        </div>
+        <!-- Project Photo -->
+        <div class="panel full-panel">
+          <div class="panel-header"><span class="panel-title">Project Cover Photo</span><span style="font-size:10px;color:var(--text3)">Shown as banner on the dashboard</span></div>
+          <div class="panel-body" style="display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap">
+            <div id="photo-preview" style="width:200px;height:120px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:11px;flex-shrink:0;background-size:cover;background-position:center;overflow:hidden">No photo</div>
+            <div style="flex:1;min-width:180px">
+              <div style="font-size:11px;color:var(--text2);margin-bottom:12px;line-height:1.6">Upload a photo of the project site, renders, or progress photos. Appears as a banner on the client dashboard.</div>
+              <label class="btn btn-ghost" style="cursor:pointer;display:inline-flex">
+                📷 Upload Photo
+                <input type="file" accept="image/*" onchange="onPhotoUpload(this)" style="display:none">
+              </label>
+              <button class="btn btn-danger" onclick="removePhoto()" style="margin-left:8px;padding:9px 14px;font-size:11px" id="remove-photo-btn">Remove</button>
+            </div>
           </div>
         </div>
         <div class="settings-grid">
@@ -260,26 +283,82 @@ canvas { width: 100% !important; }
         </div>
         <div class="panel full-panel">
           <div class="panel-header"><span class="panel-title">Data Management</span></div>
-          <div class="panel-body" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
-            <div style="flex:1;font-size:11px;color:var(--text2)">Your project data is <strong style="color:var(--accent3)">automatically saved</strong> in this browser. Close the file and reopen it anytime — your progress will be restored. To start fresh, use Reset.</div>
-            <button class="btn btn-danger" onclick="clearSavedData()">⟲ Reset All Data</button>
+          <div class="panel-body" style="display:flex;flex-direction:column;gap:14px">
+            <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding-bottom:14px;border-bottom:1px solid var(--border)">
+              <div style="flex:1;font-size:11px;color:var(--text2)">
+                <strong style="color:var(--text)">Reset Settings Only</strong><br>
+                Resets project title, dates, holidays, and passcode. Keeps all expenses, schedule, budget, and contract data intact.
+              </div>
+              <button class="btn btn-ghost" onclick="resetSettingsOnly()" style="flex-shrink:0">⟲ Reset Settings</button>
+            </div>
+            <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+              <div style="flex:1;font-size:11px;color:var(--text2)">
+                <strong style="color:var(--danger)">Full Reset</strong><br>
+                Permanently deletes ALL project data — expenses, schedule, budget, contract, everything. Cannot be undone.
+              </div>
+              <button class="btn btn-danger" onclick="clearSavedData()" style="flex-shrink:0">⚠ Full Reset</button>
+            </div>
           </div>
         </div>
       </div>
 
       <!-- DASHBOARD -->
       <div class="page active" id="page-dashboard">
-        <div class="section-header"><div><h2 id="dash-project-title">24 Bakeshop Store / HQ</h2><p id="dash-prepared-by">Prepared by: Carl Joshua E. De Mesa, Licensed Engineer</p></div></div>
+        <!-- Project Banner (client-friendly) -->
+        <div id="dash-project-banner" style="margin-bottom:20px;border-radius:14px;overflow:hidden;border:1px solid var(--border);position:relative;min-height:100px;background:var(--card)">
+          <div id="dash-banner-img" style="display:none;width:100%;height:180px;background-size:cover;background-position:center;position:relative">
+            <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(13,15,20,0) 40%,rgba(13,15,20,0.95) 100%)"></div>
+          </div>
+          <div style="padding:20px 24px;display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:12px">
+            <div>
+              <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Active Project</div>
+              <h2 id="dash-project-title" style="font-family:Syne,sans-serif;font-weight:700;font-size:20px;margin-bottom:3px">24 Bakeshop Store / HQ</h2>
+              <p id="dash-prepared-by" style="font-size:11px;color:var(--text3)">Prepared by: Carl Joshua E. De Mesa, Licensed Engineer</p>
+              <p id="dash-project-desc" style="font-size:12px;color:var(--text2);margin-top:6px;display:none"></p>
+            </div>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap" id="dash-banner-right">
+              <div style="text-align:right">
+                <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em">Contract Value</div>
+                <div id="dash-contract" style="font-family:Syne,sans-serif;font-weight:700;font-size:22px;color:var(--accent)">₱3.13M</div>
+                <div id="dash-contract-sub" style="font-size:10px;color:var(--text3)"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Row 1: KPI cards -->
-        <div class="kpi-grid">
-          <div class="kpi-card" style="--accent-color:var(--accent)"><div class="kpi-icon">₱</div><div class="kpi-label">Contract Value</div><div class="kpi-value" id="dash-contract">₱3.13M</div><div class="kpi-sub" id="dash-contract-sub"></div></div>
-          <div class="kpi-card" style="--accent-color:var(--accent3)"><div class="kpi-icon">◷</div><div class="kpi-label">Project Progress</div><div class="kpi-value" id="kpi-progress-main">0%</div><div class="kpi-sub" id="kpi-progress-sub">Budget-weighted</div></div>
+        <div class="kpi-grid" style="margin-bottom:20px">
+          <div class="kpi-card" style="--accent-color:var(--accent3)">
+            <div class="kpi-icon">◷</div><div class="kpi-label">Overall Progress</div>
+            <div class="kpi-value" id="kpi-progress-main">0%</div>
+            <div class="kpi-sub" id="kpi-progress-sub">Budget-weighted</div>
+          </div>
+          <div class="kpi-card" style="--accent-color:var(--accent)">
+            <div class="kpi-icon">✓</div><div class="kpi-label">Tasks Done</div>
+            <div class="kpi-value" id="kpi-tasks-done">0</div>
+            <div class="kpi-sub" id="kpi-tasks-sub">of 0 tasks</div>
+          </div>
           <div class="kpi-card contractor-only" style="--accent-color:var(--accent2)"><div class="kpi-icon">₱</div><div class="kpi-label">Actual Spent</div><div class="kpi-value" id="kpi-actual">₱0</div><div class="kpi-sub" id="kpi-actual-pct">0% of budget</div></div>
           <div class="kpi-card contractor-only" style="--accent-color:#7c6aff"><div class="kpi-icon">↑</div><div class="kpi-label">Anticipated Income</div><div class="kpi-value pos" id="kpi-income">₱0</div><div class="kpi-sub" id="kpi-income-sub">0% margin</div></div>
         </div>
-        <!-- Row 2: Summary charts -->
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-bottom:20px" id="dash-charts-row">
-          <div class="panel contractor-only">
+
+        <!-- Row 2: S-Curve (full width, always visible) + contractor donuts -->
+        <div class="panel full-panel" style="margin-bottom:20px">
+          <div class="panel-header">
+            <span class="panel-title">Progress S-Curve</span>
+            <div style="display:flex;gap:14px;align-items:center;font-size:11px">
+              <span style="color:var(--accent)">━ Planned</span>
+              <span style="color:var(--accent3)">━ Actual (Cost)</span>
+              <span style="color:#7c6aff">╌ Actual (Schedule)</span>
+              <span style="color:var(--danger)">● Issues</span>
+              <span style="color:#29b6f6">▼ Today</span>
+            </div>
+          </div>
+          <div class="panel-body" style="padding:14px"><div style="position:relative;height:220px"><canvas id="dash-scurve-chart"></canvas></div></div>
+        </div>
+        <!-- Contractor-only donuts -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px" class="contractor-only">
+          <div class="panel">
             <div class="panel-header"><span class="panel-title">Budget Health</span></div>
             <div class="panel-body" style="display:flex;align-items:center;justify-content:center;padding:16px">
               <canvas id="dash-donut-budget" width="160" height="160" style="max-width:160px"></canvas>
@@ -287,14 +366,7 @@ canvas { width: 100% !important; }
             </div>
           </div>
           <div class="panel">
-            <div class="panel-header"><span class="panel-title">Project Progress</span></div>
-            <div class="panel-body" style="display:flex;align-items:center;justify-content:center;padding:16px">
-              <canvas id="dash-donut-schedule" width="160" height="160" style="max-width:160px"></canvas>
-              <div id="dash-sched-legend" style="margin-left:16px;font-size:11px"></div>
-            </div>
-          </div>
-          <div class="panel contractor-only">
-            <div class="panel-header"><span class="panel-title">Cash Flow</span></div>
+            <div class="panel-header"><span class="panel-title">Cash Flow Summary</span></div>
             <div class="panel-body" style="display:flex;align-items:center;justify-content:center;padding:16px">
               <canvas id="dash-donut-cash" width="160" height="160" style="max-width:160px"></canvas>
               <div id="dash-cash-legend" style="margin-left:16px;font-size:11px"></div>
@@ -344,6 +416,7 @@ canvas { width: 100% !important; }
           <span style="font-size:18px" id="gantt-lock-icon">🔓</span>
           <div class="lock-status"><span id="gantt-lock-label" class="unlocked-text">Schedule UNLOCKED — set target start/end dates</span></div>
           <button class="btn btn-danger" id="gantt-lock-btn" onclick="toggleScheduleLock()">🔒 Lock Baseline</button>
+      <span style="font-size:10px;color:var(--text3);margin-left:4px" id="gantt-lock-hint">Lock schedule first to enter Actual Start dates and % progress</span>
         </div>
         <!-- Gantt Table -->
         <div class="panel full-panel">
@@ -573,7 +646,9 @@ let PROJECT = {
   workMode: 'construction', // 'office' = Mon-Fri, 'construction' = Mon-Sat
   totalDays: 45,
   holidays: [],
-  locked: false
+  locked: false,
+  photo: null,
+  description: ''
 };
 
 // Day-to-Date map cache
@@ -1221,6 +1296,44 @@ function buildDonut(canvasId,legendId,data,colors,labels,centerText){
   document.getElementById(legendId).innerHTML=labels.map((l,i)=>`<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px"><div style="width:8px;height:8px;border-radius:50%;background:${colors[i]}"></div><span style="color:var(--text2)">${l}</span></div>`).join('');
 }
 
+let dashSCurveChart=null;
+function buildDashSCurve(){
+  if(dashSCurveChart){dashSCurveChart.destroy();dashSCurveChart=null;}
+  const el=document.getElementById('dash-scurve-chart');
+  if(!el)return;
+  const TD=PROJECT.totalDays;
+  const labels=Array.from({length:TD+1},(_,i)=>'D'+i);
+  const planned=[0,...SCURVE_PLANNED.slice(0,TD).map(d=>d.cPct)];
+  const totalBudget=getTotalAllBudget();
+  const actualCostByDay=new Array(TD+1).fill(null);
+  for(let d=0;d<=TD;d++){
+    const dateStr=dayToDate(d);if(!dateStr)continue;
+    const dayExp=expenses.filter(e=>e.date<=dateStr).reduce((s,e)=>s+parseFloat(e.amount||0),0);
+    if(dayExp>0||d<=getCurrentDay())actualCostByDay[d]=totalBudget>0?(dayExp/totalBudget*100):0;
+  }
+  const actualSchedByDay=new Array(TD+1).fill(null);
+  if(scheduleLocked){for(let d=0;d<=TD;d++){if(d<=getCurrentDay())actualSchedByDay[d]=getProjectProgress();}}
+  const annotations={};
+  challenges.forEach((ch,i)=>{
+    const chDay=dateToDay(ch.date);
+    if(chDay!==null&&chDay<=TD){
+      const sevColor={low:'#f5c842',medium:'#e8843a',high:'#e85555',critical:'#ff2222'};
+      annotations['ch'+i]={type:'point',xValue:'D'+chDay,yValue:actualCostByDay[chDay]||planned[chDay]||0,backgroundColor:sevColor[ch.severity]||'#e85555',borderColor:'#000',borderWidth:2,radius:5,label:{display:true,content:ch.title,position:'end',backgroundColor:'rgba(0,0,0,0.8)',color:'#fff',font:{size:9},padding:3}};
+    }
+  });
+  const curDay=getCurrentDay();
+  if(curDay>0&&curDay<=TD){annotations['today']={type:'line',xMin:'D'+curDay,xMax:'D'+curDay,borderColor:'#29b6f6',borderWidth:2,borderDash:[4,2],label:{display:true,content:'Today',position:'start',backgroundColor:'#29b6f6',color:'#000',font:{size:9,weight:'bold'},padding:3}};}
+  dashSCurveChart=new Chart(el.getContext('2d'),{
+    type:'line',
+    data:{labels,datasets:[
+      {label:'Planned',data:planned,borderColor:'#f5c842',backgroundColor:'rgba(245,200,66,0.06)',borderWidth:2,pointRadius:0,fill:true,tension:0.4},
+      {label:'Actual (Cost)',data:actualCostByDay,borderColor:'#4fc3a1',borderWidth:2.5,pointRadius:2,pointBackgroundColor:'#4fc3a1',fill:false,tension:0.3,spanGaps:true},
+      {label:'Actual (Schedule)',data:actualSchedByDay,borderColor:'#7c6aff',borderWidth:2,pointRadius:1,borderDash:[5,3],fill:false,tension:0.3,spanGaps:true},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},annotation:{annotations}},scales:{x:{ticks:{color:'#5a6278',font:{size:9},maxTicksLimit:16},grid:{color:'#1a1e28'}},y:{min:0,max:100,position:'right',ticks:{color:'#5a6278',font:{size:10},callback:v=>v+'%'},grid:{color:'#1a1e28'}}}}
+  });
+}
+
 // ============================================================
 // CONTRACT SETUP
 // ============================================================
@@ -1375,14 +1488,22 @@ function submitContractItem(){
   });
   COST_CODES_BUDGET.push({code,budget:0});
 
-  // Also add to schedule
+  // Only add to schedule if no task with same name exists
   if(amt>0){
-    const taskId='t'+Date.now();
-    SCHEDULE.splice(SCHEDULE.length,0,{
-      id:taskId, name:desc,
-      targetStartDay:0, targetEndDay:PROJECT.totalDays,
-      actualStartDate:null, pctComplete:0
-    });
+    const alreadyInSchedule=SCHEDULE.some(t=>t.id&&t.name&&t.name.toLowerCase()===desc.toLowerCase());
+    if(!alreadyInSchedule){
+      const taskId='t'+Date.now();
+      // Find correct section to insert into
+      let insertIdx=SCHEDULE.length;
+      for(let i=0;i<SCHEDULE.length;i++){
+        if(SCHEDULE[i].section===catName){
+          let j=i+1;
+          while(j<SCHEDULE.length&&!SCHEDULE[j].section)j++;
+          insertIdx=j; break;
+        }
+      }
+      SCHEDULE.splice(insertIdx,0,{id:taskId,name:desc,targetStartDay:0,targetEndDay:PROJECT.totalDays,actualStartDate:null,pctComplete:0});
+    }
   }
 
   TOTAL_CONTRACT=getTotalSelling();
@@ -1702,6 +1823,68 @@ function onPasscodeSettingChange(){
   autoSave();
 }
 
+function onDescChange(){
+  PROJECT.description = document.getElementById('set-project-desc').value || '';
+  autoSave();
+}
+
+function onPhotoUpload(input){
+  const file = input.files[0];
+  if(!file) return;
+  if(file.size > 2 * 1024 * 1024){ alert('Photo too large. Please use an image under 2MB.'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    PROJECT.photo = e.target.result;
+    updatePhotoPreview();
+    autoSave();
+  };
+  reader.readAsDataURL(file);
+}
+
+function removePhoto(){
+  PROJECT.photo = null;
+  updatePhotoPreview();
+  autoSave();
+}
+
+function updatePhotoPreview(){
+  const prev = document.getElementById('photo-preview');
+  const removeBtn = document.getElementById('remove-photo-btn');
+  if(!prev) return;
+  if(PROJECT.photo){
+    prev.style.backgroundImage = 'url(' + PROJECT.photo + ')';
+    prev.textContent = '';
+    if(removeBtn) removeBtn.style.display = 'inline-flex';
+  } else {
+    prev.style.backgroundImage = '';
+    prev.textContent = 'No photo';
+    if(removeBtn) removeBtn.style.display = 'none';
+  }
+}
+
+function resetSettingsOnly(){
+  if(!confirm('Reset project settings (title, dates, holidays, passcode)? Your expenses, schedule, budget and contract data will NOT be affected.')) return;
+  PROJECT.startDate = '2026-03-23';
+  PROJECT.workMode = 'construction';
+  PROJECT.totalDays = 45;
+  PROJECT.holidays = [];
+  PROJECT.locked = false;
+  PROJECT.photo = null;
+  PROJECT.description = '';
+  PASSCODE = '0000';
+  document.getElementById('set-start-date').value = PROJECT.startDate;
+  document.getElementById('set-work-mode').value = PROJECT.workMode;
+  document.getElementById('set-total-days').value = PROJECT.totalDays;
+  document.getElementById('set-passcode').value = PASSCODE;
+  const descEl = document.getElementById('set-project-desc');
+  if(descEl) descEl.value = '';
+  updatePhotoPreview();
+  buildDayDateMap();
+  renderHolidays();
+  autoSave();
+  alert('Settings reset successfully.');
+}
+
 // ============================================================
 // FIREBASE CONFIG — REPLACE WITH YOUR OWN VALUES
 // ============================================================
@@ -1715,10 +1898,14 @@ const FIREBASE_CONFIG = {
   appId: "1:264023994326:web:3c58911167686ee305be77"
 };
 
-const DB_PATH = '24bs_project'; // Firebase database path
+// Read project ID from URL — e.g. project.html?id=24bs
+const urlParams = new URLSearchParams(window.location.search);
+const PROJECT_ID = urlParams.get('id') || '24bs';
+const DB_PATH = 'projects/' + PROJECT_ID;
 let firebaseReady = false;
 let dbRef = null;
 let commentsRef = null;
+let metaRef = null;
 
 // Client comments data
 let clientComments = [];
@@ -1726,7 +1913,7 @@ let clientComments = [];
 // ============================================================
 // SAVE / LOAD (Firebase + localStorage fallback)
 // ============================================================
-const SAVE_KEY = '24bs_project_data_v3';
+const SAVE_KEY = '24bs_project_data_' + PROJECT_ID + '_v3';
 
 function getStateObject() {
   return {
@@ -1757,6 +1944,16 @@ function saveState() {
     if(firebaseReady && dbRef) {
       dbRef.set(state).then(()=>{
         flashSaved('☁ Synced');
+        // Also sync key metrics to meta so the hub can display them
+        if(metaRef) {
+          const tasks = SCHEDULE.filter(t=>!t.section);
+          const prog = tasks.length ? Math.round(tasks.reduce((s,t)=>s+(t.pctComplete||0),0)/tasks.length) : 0;
+          metaRef.update({
+            contractValue: getTotalSelling(),
+            progress: prog,
+            lastUpdated: new Date().toISOString()
+          });
+        }
       }).catch(e => {
         console.warn('Firebase save failed:', e);
         flashSaved('✓ Local');
@@ -1803,6 +2000,12 @@ function applyState(s) {
       const nameEl = document.querySelector('.logo-badge .name');
       if(nameEl) nameEl.textContent = s.projectTitle.length > 16 ? s.projectTitle.substring(0,16)+'…' : s.projectTitle;
     }
+    if(s.project && s.project.photo) { PROJECT.photo = s.project.photo; updatePhotoPreview(); }
+    if(s.project && s.project.description) {
+      PROJECT.description = s.project.description;
+      const descEl = document.getElementById('set-project-desc');
+      if(descEl) descEl.value = PROJECT.description;
+    }
     if(s.passcode) {
       PASSCODE = s.passcode;
       const pcEl = document.getElementById('set-passcode');
@@ -1848,6 +2051,7 @@ function initFirebase() {
     const db = firebase.database();
     dbRef = db.ref(DB_PATH + '/data');
     commentsRef = db.ref(DB_PATH + '/comments');
+    metaRef = db.ref(DB_PATH + '/meta');
     firebaseReady = true;
 
     document.getElementById('sync-status').textContent = '☁ Live';
