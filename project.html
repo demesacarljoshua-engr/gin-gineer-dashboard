@@ -221,21 +221,7 @@ canvas { width: 100% !important; }
             <textarea id="set-project-desc" rows="2" placeholder="Brief description of the project scope, location, or notes for the client..." oninput="onDescChange()" style="background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:9px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;outline:none;width:100%;resize:vertical;min-height:60px"></textarea>
           </div>
         </div>
-        <!-- Project Photo -->
-        <div class="panel full-panel">
-          <div class="panel-header"><span class="panel-title">Project Cover Photo</span><span style="font-size:10px;color:var(--text3)">Shown as banner on the dashboard</span></div>
-          <div class="panel-body" style="display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap">
-            <div id="photo-preview" style="width:200px;height:120px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:11px;flex-shrink:0;background-size:cover;background-position:center;overflow:hidden">No photo</div>
-            <div style="flex:1;min-width:180px">
-              <div style="font-size:11px;color:var(--text2);margin-bottom:12px;line-height:1.6">Upload a photo of the project site, renders, or progress photos. Appears as a banner on the client dashboard.</div>
-              <label class="btn btn-ghost" style="cursor:pointer;display:inline-flex">
-                📷 Upload Photo
-                <input type="file" accept="image/*" onchange="onPhotoUpload(this)" style="display:none">
-              </label>
-              <button class="btn btn-danger" onclick="removePhoto()" style="margin-left:8px;padding:9px 14px;font-size:11px" id="remove-photo-btn">Remove</button>
-            </div>
-          </div>
-        </div>
+
         <div class="settings-grid">
           <div class="settings-card">
             <label>Project Start Date (Day 0)</label>
@@ -325,8 +311,7 @@ canvas { width: 100% !important; }
       <div class="page active" id="page-dashboard">
         <!-- Project Banner: photo box left, info right -->
         <div id="dash-project-banner" style="margin-bottom:20px;border-radius:14px;overflow:hidden;border:1px solid var(--border);background:var(--card);display:flex;gap:0">
-          <!-- Photo box — fixed size, shown only when photo exists -->
-          <div id="dash-banner-img" style="display:none;width:200px;min-width:200px;background:var(--bg3);background-size:cover;background-position:center;border-right:1px solid var(--border);flex-shrink:0"></div>
+
           <!-- Info panel -->
           <div style="flex:1;padding:22px 26px;display:flex;flex-direction:column;justify-content:space-between;min-width:0">
             <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap">
@@ -698,7 +683,6 @@ let PROJECT = {
   totalDays: 45,
   holidays: [],
   locked: false,
-  photo: null,
   description: ''
 };
 
@@ -1328,17 +1312,10 @@ function buildDashboard(){
   document.getElementById('kpi-income').className='kpi-value '+(income>=0?'pos':'neg');
   document.getElementById('kpi-income-sub').textContent=marginPct+'% margin';
 
-  // Photo and description
+  // Description
   const bannerImg = document.getElementById('dash-banner-img');
+  if(bannerImg) bannerImg.style.display = 'none';
   const descEl = document.getElementById('dash-project-desc');
-  if(bannerImg){
-    if(PROJECT.photo){
-      bannerImg.style.backgroundImage = 'url(' + PROJECT.photo + ')';
-      bannerImg.style.display = 'block';
-    } else {
-      bannerImg.style.display = 'none';
-    }
-  }
   if(descEl){
     if(PROJECT.description && PROJECT.description.trim()){
       descEl.textContent = PROJECT.description;
@@ -2124,50 +2101,9 @@ function onDescChange(){
   markUnsaved();
 }
 
-function onPhotoUpload(input){
-  const file = input.files[0];
-  if(!file) return;
-  if(file.size > 10 * 1024 * 1024){ alert('Photo too large. Max 10MB.'); return; }
-  const reader = new FileReader();
-  reader.onload = e => {
-    const img = new Image();
-    img.onload = () => {
-      // Compress: max 800px wide, JPEG at 65% quality
-      const MAX = 800;
-      let w = img.width, h = img.height;
-      if(w > MAX){ h = Math.round(h * MAX / w); w = MAX; }
-      const canvas = document.createElement('canvas');
-      canvas.width = w; canvas.height = h;
-      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      PROJECT.photo = canvas.toDataURL('image/jpeg', 0.65);
-      updatePhotoPreview();
-      markUnsaved();
-    };
-    img.src = e.target.result;
-  };
-  reader.readAsDataURL(file);
-}
-
-function removePhoto(){
-  PROJECT.photo = null;
-  updatePhotoPreview();
-  markUnsaved();
-}
-
-function updatePhotoPreview(){
-  const prev = document.getElementById('photo-preview');
-  const removeBtn = document.getElementById('remove-photo-btn');
-  if(!prev) return;
-  if(PROJECT.photo){
-    prev.style.backgroundImage = 'url(' + PROJECT.photo + ')';
-    prev.textContent = '';
-    if(removeBtn) removeBtn.style.display = 'inline-flex';
-  } else {
-    prev.style.backgroundImage = '';
-    prev.textContent = 'No photo';
-    if(removeBtn) removeBtn.style.display = 'none';
-  }
-}
+function onPhotoUpload(){ alert('Photo upload is temporarily disabled.'); }
+function removePhoto(){ }
+function updatePhotoPreview(){ }
 
 function resetSettingsOnly(){
   if(!confirm('Reset project settings (title, dates, holidays, passcode)? Your expenses, schedule, budget and contract data will NOT be affected.')) return;
@@ -2176,7 +2112,6 @@ function resetSettingsOnly(){
   PROJECT.totalDays = 45;
   PROJECT.holidays = [];
   PROJECT.locked = false;
-  PROJECT.photo = null;
   PROJECT.description = '';
   PASSCODE = '0000';
   document.getElementById('set-start-date').value = PROJECT.startDate;
@@ -2248,32 +2183,14 @@ function getStateObject() {
 function saveState() {
   try {
     const state = getStateObject();
-    // Build full state with photo for localStorage (local is fast, no size limit concern)
-    const localState = Object.assign({}, state, {
-      project: Object.assign({}, state.project, {
-        photo: PROJECT.photo || null,
-        description: PROJECT.description || ''
-      })
-    });
-    try {
-      localStorage.setItem(SAVE_KEY, JSON.stringify(localState));
-    } catch(e) {
-      // localStorage quota exceeded (photo too large) — save without photo
-      console.warn('localStorage quota exceeded, saving without photo');
-      const stateNoPhoto = Object.assign({}, localState, { project: Object.assign({}, localState.project, {photo: null}) });
-      localStorage.setItem(SAVE_KEY, JSON.stringify(stateNoPhoto));
-    }
+    // Save to localStorage (no photo stored)
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch(e) { console.warn('Save failed:', e); }
 
     // Save to Firebase — photo goes to a separate /photo node to avoid bloating every sync
     if(firebaseReady && dbRef) {
       dbRef.set(state).then(()=>{
         flashSaved('☁ Synced');
-        // Save photo separately (only if changed, large payload)
-        if(PROJECT.photo && metaRef) {
-          metaRef.child('photo').set(PROJECT.photo).catch(e=>console.warn('Photo save failed:',e));
-        } else if(!PROJECT.photo && metaRef) {
-          metaRef.child('photo').remove();
-        }
+
         // Sync key metrics for hub
         if(metaRef) {
           const tasks = SCHEDULE.filter(t=>!t.section);
@@ -2283,7 +2200,11 @@ function saveState() {
             progress: prog,
             lastUpdated: new Date().toISOString()
           });
+          // Clean up any old large photo stored in Firebase
+          metaRef.child('photo').remove().catch(()=>{});
         }
+        // Also clean up photo from old data location if present
+        dbRef.child('project/photo').remove().catch(()=>{});
       }).catch(e => {
         console.warn('Firebase save failed:', e);
         flashSaved('✓ Local');
@@ -2375,7 +2296,6 @@ function applyState(s) {
       const nameEl = document.querySelector('.logo-badge .name');
       if(nameEl) nameEl.textContent = s.projectTitle.length > 16 ? s.projectTitle.substring(0,16)+'…' : s.projectTitle;
     }
-    if(s.project && s.project.photo) { PROJECT.photo = s.project.photo; updatePhotoPreview(); }
     if(s.project && s.project.description) {
       PROJECT.description = s.project.description;
       const descEl = document.getElementById('set-project-desc');
@@ -2461,28 +2381,10 @@ function initFirebase() {
       if(data) {
         applyState(data);
         refreshAllViews();
-        // Restore photo from old embedded location if present
-        if(data.project && data.project.photo && !PROJECT.photo) {
-          PROJECT.photo = data.project.photo;
-          updatePhotoPreview();
-          buildDashboard();
-        }
+
         console.log('Loaded from Firebase (live)');
       }
-      // Load photo from separate node (non-blocking)
-      if(metaRef) return metaRef.child('photo').once('value');
-      return Promise.resolve(null);
-    }).then(photoSnap => {
-      if(!photoSnap) return;
-      const photo = photoSnap.val();
-      if(photo) {
-        PROJECT.photo = photo;
-        updatePhotoPreview();
-        buildDashboard();
-      }
-    }).catch(e => {
-      console.warn('Firebase load error:', e);
-    });
+    }).catch(e => { console.warn('Firebase load error:', e); });
 
   } catch(e) {
     console.warn('Firebase init failed:', e);
