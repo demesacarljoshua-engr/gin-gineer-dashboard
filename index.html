@@ -272,11 +272,26 @@ canvas { width: 100% !important; }
         <div class="panel full-panel">
           <div class="panel-header"><span class="panel-title">Access Control</span></div>
           <div class="panel-body">
-            <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
-              <div style="flex:1;font-size:11px;color:var(--text2)">Set the contractor passcode. Anyone with this file can view the Dashboard and Gantt chart. Only users who enter the passcode can access Budget, Expenses, Payments, Cash Flow, and Settings.</div>
-              <div class="form-field" style="width:160px">
-                <label>Contractor Passcode</label>
-                <input type="text" id="set-passcode" value="0000" onchange="onPasscodeSettingChange()" style="text-align:center;letter-spacing:4px;font-size:16px">
+            <div style="display:flex;flex-direction:column;gap:20px">
+              <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding-bottom:16px;border-bottom:1px solid var(--border)">
+                <div style="flex:1;font-size:11px;color:var(--text2)">
+                  <strong style="color:var(--text)">Contractor Passcode</strong><br>
+                  Unlocks full access — budget, expenses, payments, cash flow, and settings.
+                </div>
+                <div class="form-field" style="width:160px">
+                  <label>Contractor Passcode</label>
+                  <input type="text" id="set-passcode" value="0000" onchange="onPasscodeSettingChange()" style="text-align:center;letter-spacing:4px;font-size:16px">
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+                <div style="flex:1;font-size:11px;color:var(--text2)">
+                  <strong style="color:var(--text)">Client Comment Passcode</strong><br>
+                  Clients must enter this to post comments or approvals. Leave blank to allow anyone to comment without a passcode.
+                </div>
+                <div class="form-field" style="width:160px">
+                  <label>Client Passcode</label>
+                  <input type="text" id="set-client-passcode" placeholder="Leave blank = open" onchange="onClientPasscodeSettingChange()" style="text-align:center;letter-spacing:4px;font-size:16px">
+                </div>
               </div>
             </div>
           </div>
@@ -304,39 +319,48 @@ canvas { width: 100% !important; }
 
       <!-- DASHBOARD -->
       <div class="page active" id="page-dashboard">
-        <!-- Project Banner (client-friendly) -->
-        <div id="dash-project-banner" style="margin-bottom:20px;border-radius:14px;overflow:hidden;border:1px solid var(--border);position:relative;min-height:100px;background:var(--card)">
-          <div id="dash-banner-img" style="display:none;width:100%;height:180px;background-size:cover;background-position:center;position:relative">
-            <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(13,15,20,0) 40%,rgba(13,15,20,0.95) 100%)"></div>
+        <!-- Project Banner — photo background + description integrated -->
+        <div id="dash-project-banner" style="margin-bottom:20px;border-radius:14px;overflow:hidden;border:1px solid var(--border);position:relative;background:var(--card)">
+          <!-- Photo background layer -->
+          <div id="dash-banner-img" style="display:none;position:absolute;inset:0;background-size:cover;background-position:center;z-index:0">
+            <div style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(13,15,20,0.85) 0%,rgba(13,15,20,0.6) 100%)"></div>
           </div>
-          <div style="padding:20px 24px;display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:12px">
-            <div>
-              <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Active Project</div>
-              <h2 id="dash-project-title" style="font-family:Syne,sans-serif;font-weight:700;font-size:20px;margin-bottom:3px">24 Bakeshop Store / HQ</h2>
-              <p id="dash-prepared-by" style="font-size:11px;color:var(--text3)">Prepared by: Carl Joshua E. De Mesa, Licensed Engineer</p>
-              <p id="dash-project-desc" style="font-size:12px;color:var(--text2);margin-top:6px;display:none"></p>
+          <!-- Content over photo -->
+          <div style="position:relative;z-index:1;padding:24px 28px;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:16px">
+            <div style="flex:1;min-width:0">
+              <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:6px">Active Project</div>
+              <h2 id="dash-project-title" style="font-family:Syne,sans-serif;font-weight:700;font-size:22px;margin-bottom:4px;line-height:1.2">24 Bakeshop Store / HQ</h2>
+              <p id="dash-prepared-by" style="font-size:11px;color:var(--text3);margin-bottom:0">Prepared by: Carl Joshua E. De Mesa, Licensed Engineer</p>
+              <p id="dash-project-desc" style="font-size:12px;color:var(--text2);margin-top:10px;line-height:1.6;max-width:600px;display:none;padding:10px 12px;background:rgba(255,255,255,0.05);border-left:2px solid var(--accent);border-radius:0 6px 6px 0"></p>
             </div>
-            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap" id="dash-banner-right">
-              <div style="text-align:right">
-                <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em">Contract Value</div>
-                <div id="dash-contract" style="font-family:Syne,sans-serif;font-weight:700;font-size:22px;color:var(--accent)">₱3.13M</div>
-                <div id="dash-contract-sub" style="font-size:10px;color:var(--text3)"></div>
-              </div>
+            <div style="text-align:right;flex-shrink:0">
+              <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Contract Value</div>
+              <div id="dash-contract" style="font-family:Syne,sans-serif;font-weight:700;font-size:28px;color:var(--accent);line-height:1">₱3.13M</div>
+              <div id="dash-contract-sub" style="font-size:10px;color:var(--text3);margin-top:3px"></div>
             </div>
+          </div>
+          <!-- Progress bar at bottom of banner -->
+          <div style="position:relative;z-index:1;padding:0 28px 20px;display:flex;align-items:center;gap:14px">
+            <div style="flex:1;background:rgba(255,255,255,0.1);border-radius:4px;height:6px;overflow:hidden">
+              <div id="dash-banner-progress-fill" style="height:100%;border-radius:4px;background:var(--accent3);transition:width 1s ease;width:0%"></div>
+            </div>
+            <span id="dash-banner-progress-label" style="font-family:Syne,sans-serif;font-weight:700;font-size:14px;color:var(--accent3);white-space:nowrap">0%</span>
+            <span id="kpi-progress-sub" style="font-size:10px;color:var(--text3)">overall progress</span>
+            <span class="kpi-value" id="kpi-progress-main" style="display:none">0%</span>
           </div>
         </div>
 
-        <!-- Row 1: KPI cards -->
+        <!-- Row 1: KPI cards (3 visible to client, 2 extra for contractor) -->
         <div class="kpi-grid" style="margin-bottom:20px">
           <div class="kpi-card" style="--accent-color:var(--accent3)">
-            <div class="kpi-icon">◷</div><div class="kpi-label">Overall Progress</div>
-            <div class="kpi-value" id="kpi-progress-main">0%</div>
-            <div class="kpi-sub" id="kpi-progress-sub">Budget-weighted</div>
+            <div class="kpi-icon">📅</div><div class="kpi-label">Days Elapsed</div>
+            <div class="kpi-value" id="kpi-days-elapsed">—</div>
+            <div class="kpi-sub" id="kpi-days-sub">of — working days</div>
           </div>
           <div class="kpi-card" style="--accent-color:var(--accent)">
-            <div class="kpi-icon">✓</div><div class="kpi-label">Tasks Done</div>
+            <div class="kpi-icon">✓</div><div class="kpi-label">Scope Complete</div>
             <div class="kpi-value" id="kpi-tasks-done">0</div>
-            <div class="kpi-sub" id="kpi-tasks-sub">of 0 tasks</div>
+            <div class="kpi-sub" id="kpi-tasks-sub">tasks finished</div>
           </div>
           <div class="kpi-card contractor-only" style="--accent-color:var(--accent2)"><div class="kpi-icon">₱</div><div class="kpi-label">Actual Spent</div><div class="kpi-value" id="kpi-actual">₱0</div><div class="kpi-sub" id="kpi-actual-pct">0% of budget</div></div>
           <div class="kpi-card contractor-only" style="--accent-color:#7c6aff"><div class="kpi-icon">↑</div><div class="kpi-label">Anticipated Income</div><div class="kpi-value pos" id="kpi-income">₱0</div><div class="kpi-sub" id="kpi-income-sub">0% margin</div></div>
@@ -392,18 +416,29 @@ canvas { width: 100% !important; }
             <tbody id="dash-scope-tbody"></tbody></table>
           </div>
         </div>
-        <!-- Row 5: Comments & Approvals (visible to both client and contractor) -->
+        <!-- Row 5: Comments & Approvals -->
         <div class="panel full-panel">
           <div class="panel-header">
             <span class="panel-title">Comments & Approvals</span>
-            <span style="font-size:10px;color:var(--text3)" id="sync-status">Offline (Local)</span>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span id="comment-unlock-badge" style="display:none;font-size:10px;color:var(--accent3)">🔓 Unlocked</span>
+              <span style="font-size:10px;color:var(--text3)" id="sync-status">Offline (Local)</span>
+            </div>
           </div>
           <div class="panel-body" style="padding:0">
             <div id="comments-list" style="max-height:250px;overflow-y:auto"></div>
-            <div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px">
-              <input type="text" id="comment-input" placeholder="Add a comment or note..." style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:9px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;outline:none" onkeyup="if(event.key==='Enter')addComment()">
+            <!-- Locked state: passcode required -->
+            <div id="comment-locked-bar" style="padding:14px 16px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;background:rgba(245,200,66,0.04)">
+              <span style="font-size:16px">🔒</span>
+              <div style="flex:1;font-size:11px;color:var(--text2)">Enter your client passcode to post comments or approvals.</div>
+              <button class="btn btn-primary" onclick="openClientPasscodeModal()" style="padding:8px 14px;font-size:11px">Unlock Comments</button>
+            </div>
+            <!-- Unlocked state: comment input -->
+            <div id="comment-input-bar" style="padding:12px 16px;border-top:1px solid var(--border);display:none;gap:8px;flex-wrap:wrap">
+              <input type="text" id="comment-input" placeholder="Add a comment or note..." style="flex:1;min-width:200px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:9px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;outline:none" onkeyup="if(event.key==='Enter')addComment()">
               <button class="btn btn-primary" onclick="addComment()" style="padding:9px 14px">Send</button>
               <button class="btn btn-success" onclick="addApproval('Progress approved — proceed as planned')" style="padding:9px 14px" title="Quick approval">✓ Approve</button>
+              <button class="btn btn-ghost" onclick="lockComments()" style="padding:9px 12px;font-size:11px" title="Lock again">🔒</button>
             </div>
           </div>
         </div>
@@ -632,6 +667,18 @@ canvas { width: 100% !important; }
   <input type="password" class="passcode-input" id="passcode-input" maxlength="10" placeholder="••••" onkeyup="if(event.key==='Enter')checkPasscode()">
   <div id="passcode-error" style="color:var(--danger);font-size:11px;margin-top:8px;min-height:16px"></div>
   <div class="modal-actions" style="justify-content:center"><button class="btn btn-ghost" onclick="closeModal('passcode-modal')">Cancel</button><button class="btn btn-primary" onclick="checkPasscode()">Unlock</button></div>
+</div></div>
+
+<div class="modal-overlay" id="client-passcode-modal"><div class="modal" style="width:360px;text-align:center">
+  <div style="font-size:40px;margin-bottom:12px">💬</div>
+  <h3>Client Access</h3>
+  <p style="font-size:11px;color:var(--text3);margin-bottom:20px">Enter your client passcode to post comments and approvals.</p>
+  <input type="password" class="passcode-input" id="client-passcode-input" maxlength="10" placeholder="••••" onkeyup="if(event.key==='Enter')checkClientPasscode()">
+  <div id="client-passcode-error" style="color:var(--danger);font-size:11px;margin-top:8px;min-height:16px"></div>
+  <div class="modal-actions" style="justify-content:center">
+    <button class="btn btn-ghost" onclick="closeModal('client-passcode-modal')">Cancel</button>
+    <button class="btn btn-primary" onclick="checkClientPasscode()">Unlock Comments</button>
+  </div>
 </div></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
@@ -1007,6 +1054,7 @@ function onGanttPct(id,val){const t=SCHEDULE.find(x=>x.id===id);if(t)t.pctComple
 
 function toggleScheduleLock(){
   if(!scheduleLocked){
+    if(!contractLocked){alert('⚠ Lock the Contract first (in the Contract tab) before locking the Gantt baseline.\n\nThe contract line items define the scope of work for the schedule.');return;}
     if(!confirm('Lock schedule as baseline? Target dates become fixed. Working day mode will also be locked.'))return;
     scheduleLocked=true; PROJECT.locked=true;
     document.getElementById('set-start-date').disabled=true;
@@ -1049,10 +1097,32 @@ function buildSCurve(){
   }
 
   // Actual schedule progress (budget-weighted)
+  // Actual schedule progress — per-day interpolation from actual start dates
   const actualSchedByDay=new Array(TD+1).fill(null);
   if(scheduleLocked){
-    for(let d=0;d<=TD;d++){
-      if(d<=getCurrentDay()) actualSchedByDay[d]=getProjectProgress();
+    const curDayS=getCurrentDay();
+    const sellTasks=SCHEDULE.filter(t=>!t.section&&t.pctComplete>0);
+    const totalSell=COST_CODES_SELLING.filter(c=>!isInternalOnly(c)).reduce((s,c)=>s+(c.selling||0),0)||1;
+    for(let d=0;d<=curDayS;d++){
+      let weightedPct=0, totalWeight=0;
+      for(const t of SCHEDULE.filter(x=>!x.section)){
+        const cc=COST_CODES_SELLING.find(c=>!isInternalOnly(c)&&c.desc&&t.name&&(c.desc.toLowerCase()===t.name.toLowerCase()||c.desc.toLowerCase().includes(t.name.split(' ')[0].toLowerCase())||t.name.toLowerCase().includes(c.desc.split(' ')[0].toLowerCase())));
+        const w=cc?(cc.selling||1):1;
+        totalWeight+=w;
+        const startDay=t.actualStartDate?dateToDay(t.actualStartDate):null;
+        if(startDay!==null&&startDay<=d){
+          // Linearly interpolate: at actualStartDay=0%, at curDay=pctComplete%
+          const span=curDayS-startDay;
+          const taskPctAtD=span>0?Math.min(t.pctComplete,(t.pctComplete/span*(d-startDay))):t.pctComplete;
+          weightedPct+=w*taskPctAtD;
+        } else if(startDay===null&&t.pctComplete>0&&t.targetStartDay<=d){
+          // No actual date but has progress — use target start day
+          const span=curDayS-t.targetStartDay;
+          const taskPctAtD=span>0?Math.min(t.pctComplete,(t.pctComplete/span*(d-t.targetStartDay))):t.pctComplete;
+          weightedPct+=w*taskPctAtD;
+        }
+      }
+      actualSchedByDay[d]=totalWeight>0?(weightedPct/totalWeight):0;
     }
   }
 
@@ -1129,17 +1199,23 @@ function buildProjection(costData, schedData, planned){
   const costVar=(costPct-plannedPct).toFixed(1);
   const schedVar=(schedPct-plannedPct).toFixed(1);
 
-  // Extrapolate end date
+  // Extrapolate end date — use recent rate (last 5 days) for better accuracy
   let projEndDay=PROJECT.totalDays;
-  if(schedPct>0){
-    const rate=schedPct/curDay;
-    projEndDay=Math.ceil(100/rate);
+  if(schedPct>0&&curDay>0){
+    const lookback=Math.min(5,curDay);
+    const pastPct=schedData[curDay-lookback]||0;
+    const recentRate=(schedPct-pastPct)/lookback;
+    const overallRate=schedPct/curDay;
+    const useRate=recentRate>0.05?recentRate:overallRate;
+    const remaining=100-schedPct;
+    const daysNeeded=useRate>0?Math.ceil(remaining/useRate):PROJECT.totalDays-curDay;
+    projEndDay=curDay+daysNeeded;
   }
-  const projEndDate=dayToDate(Math.min(projEndDay, PROJECT.totalDays));
+  const projEndDate=dayToDate(Math.min(projEndDay,PROJECT.totalDays));
   const origEndDate=dayToDate(PROJECT.totalDays);
 
   const diff=projEndDay-PROJECT.totalDays;
-  const diffLabel=diff>0?`<span class="neg">${diff} days DELAYED</span>`:diff<0?`<span class="pos">${Math.abs(diff)} days AHEAD</span>`:'<span class="pos">ON SCHEDULE</span>';
+  const diffLabel=diff>0?`<span class="neg">${diff} working days DELAYED</span>`:diff<0?`<span class="pos">${Math.abs(diff)} working days AHEAD</span>`:'<span class="pos">ON SCHEDULE</span>';
 
   el.innerHTML=`
     <div style="margin-bottom:12px"><strong>Day ${curDay} of ${PROJECT.totalDays}</strong></div>
@@ -1150,7 +1226,7 @@ function buildProjection(costData, schedData, planned){
       <div>vs Planned: <span class="${parseFloat(schedVar)>=0?'pos':'neg'}">${schedVar}%</span></div>
     </div>
     <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
-      <div style="font-size:11px">Projected End: <strong>${formatDateShort(projEndDate)||'Day '+projEndDay}</strong> (Day ${projEndDay})</div>
+      <div style="font-size:11px">Projected End: <strong>${projEndDay<=PROJECT.totalDays?formatDateShort(projEndDate):'Beyond Day '+PROJECT.totalDays}</strong> (Day ${projEndDay})</div>
       <div style="font-size:11px;margin-top:4px">Original End: ${formatDateShort(origEndDate)} (Day ${PROJECT.totalDays})</div>
       <div style="font-size:13px;margin-top:8px;font-weight:600">${diffLabel}</div>
     </div>`;
@@ -1312,7 +1388,28 @@ function buildDashSCurve(){
     if(dayExp>0||d<=getCurrentDay())actualCostByDay[d]=totalBudget>0?(dayExp/totalBudget*100):0;
   }
   const actualSchedByDay=new Array(TD+1).fill(null);
-  if(scheduleLocked){for(let d=0;d<=TD;d++){if(d<=getCurrentDay())actualSchedByDay[d]=getProjectProgress();}}
+  if(scheduleLocked){
+    const curDayDS=getCurrentDay();
+    for(let d=0;d<=curDayDS;d++){
+      let weightedPct=0,totalWeight=0;
+      for(const t of SCHEDULE.filter(x=>!x.section)){
+        const cc=COST_CODES_SELLING.find(c=>!isInternalOnly(c)&&c.desc&&t.name&&(c.desc.toLowerCase()===t.name.toLowerCase()||c.desc.toLowerCase().includes(t.name.split(' ')[0].toLowerCase())||t.name.toLowerCase().includes(c.desc.split(' ')[0].toLowerCase())));
+        const w=cc?(cc.selling||1):1;
+        totalWeight+=w;
+        const startDay=t.actualStartDate?dateToDay(t.actualStartDate):null;
+        if(startDay!==null&&startDay<=d){
+          const span=curDayDS-startDay;
+          const taskPctAtD=span>0?Math.min(t.pctComplete,(t.pctComplete/span*(d-startDay))):t.pctComplete;
+          weightedPct+=w*taskPctAtD;
+        } else if(startDay===null&&t.pctComplete>0&&t.targetStartDay<=d){
+          const span=curDayDS-t.targetStartDay;
+          const taskPctAtD=span>0?Math.min(t.pctComplete,(t.pctComplete/span*(d-t.targetStartDay))):t.pctComplete;
+          weightedPct+=w*taskPctAtD;
+        }
+      }
+      actualSchedByDay[d]=totalWeight>0?(weightedPct/totalWeight):0;
+    }
+  }
   const annotations={};
   challenges.forEach((ch,i)=>{
     const chDay=dateToDay(ch.date);
@@ -1756,6 +1853,8 @@ function buildCompare(){const bm={};COST_CODES_BUDGET.forEach(c=>bm[c.code]=c.bu
 // ============================================================
 let accessMode = 'client'; // 'client' or 'contractor'
 let PASSCODE = '0000';
+let CLIENT_PASSCODE = ''; // empty = no client passcode required
+let clientUnlocked = false; // tracks if client has entered their passcode
 
 function toggleAccessMode(){
   if(accessMode === 'client'){
@@ -1793,6 +1892,7 @@ function checkPasscode(){
 }
 
 function applyAccessMode(){
+  updateCommentUI();
   const shell = document.getElementById('app-shell');
   const banner = document.getElementById('access-banner');
   const icon = document.getElementById('access-icon');
@@ -1821,6 +1921,59 @@ function applyAccessMode(){
 function onPasscodeSettingChange(){
   PASSCODE = document.getElementById('set-passcode').value || '0000';
   autoSave();
+}
+
+function onClientPasscodeSettingChange(){
+  CLIENT_PASSCODE = document.getElementById('set-client-passcode').value || '';
+  // If passcode removed, unlock comments for everyone
+  if(!CLIENT_PASSCODE){ clientUnlocked = true; updateCommentUI(); }
+  autoSave();
+}
+
+function openClientPasscodeModal(){
+  // If no passcode set, just unlock directly
+  if(!CLIENT_PASSCODE){ clientUnlocked = true; updateCommentUI(); return; }
+  document.getElementById('client-passcode-modal').classList.add('show');
+  document.getElementById('client-passcode-input').value = '';
+  document.getElementById('client-passcode-error').textContent = '';
+  setTimeout(()=>document.getElementById('client-passcode-input').focus(), 100);
+}
+
+function checkClientPasscode(){
+  const val = document.getElementById('client-passcode-input').value;
+  if(val === CLIENT_PASSCODE || !CLIENT_PASSCODE){
+    clientUnlocked = true;
+    closeModal('client-passcode-modal');
+    updateCommentUI();
+  } else {
+    const inp = document.getElementById('client-passcode-input');
+    inp.classList.add('error');
+    document.getElementById('client-passcode-error').textContent = 'Incorrect passcode. Try again.';
+    setTimeout(()=>inp.classList.remove('error'), 300);
+    inp.value = ''; inp.focus();
+  }
+}
+
+function lockComments(){
+  clientUnlocked = false;
+  updateCommentUI();
+}
+
+function updateCommentUI(){
+  const isUnlocked = clientUnlocked || accessMode === 'contractor' || !CLIENT_PASSCODE;
+  const lockedBar = document.getElementById('comment-locked-bar');
+  const inputBar = document.getElementById('comment-input-bar');
+  const badge = document.getElementById('comment-unlock-badge');
+  if(!lockedBar || !inputBar) return;
+  if(isUnlocked){
+    lockedBar.style.display = 'none';
+    inputBar.style.display = 'flex';
+    if(badge) badge.style.display = 'inline-flex';
+  } else {
+    lockedBar.style.display = 'flex';
+    inputBar.style.display = 'none';
+    if(badge) badge.style.display = 'none';
+  }
 }
 
 function onDescChange(){
@@ -1931,6 +2084,7 @@ function getStateObject() {
     contractCategories: CONTRACT_CATEGORIES,
     projectTitle: document.getElementById('set-project-title').value,
     passcode: PASSCODE,
+    clientPasscode: CLIENT_PASSCODE,
     savedAt: new Date().toISOString()
   };
 }
@@ -2010,6 +2164,11 @@ function applyState(s) {
       PASSCODE = s.passcode;
       const pcEl = document.getElementById('set-passcode');
       if(pcEl) pcEl.value = PASSCODE;
+    }
+    if(s.clientPasscode !== undefined) {
+      CLIENT_PASSCODE = s.clientPasscode || '';
+      const cpEl = document.getElementById('set-client-passcode');
+      if(cpEl) cpEl.value = CLIENT_PASSCODE;
     }
     TOTAL_CONTRACT = getTotalSelling();
     return true;
@@ -2172,6 +2331,7 @@ renderHolidays();
 document.getElementById('exp-date').value=new Date().toISOString().split('T')[0];
 updateBudgetLockUI();
 applyAccessMode();
+updateCommentUI();
 renderComments();
 
 // Initialize Firebase after DOM is ready
