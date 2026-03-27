@@ -1,0 +1,2597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>24BS Project Management</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0d0f14; --bg2: #13161d; --bg3: #1a1e28; --border: #252a38;
+  --accent: #f5c842; --accent2: #e8843a; --accent3: #4fc3a1;
+  --danger: #e85555; --text: #e8eaf0; --text2: #8892aa; --text3: #5a6278; --card: #161b26;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'DM Mono', monospace; font-size: 13px; min-height: 100vh; }
+.shell { display: flex; min-height: 100vh; }
+.sidebar { width: 220px; background: var(--bg2); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh; z-index: 100; }
+.main { margin-left: 220px; flex: 1; display: flex; flex-direction: column; }
+.topbar { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 14px 28px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
+.content { padding: 28px; flex: 1; }
+.sidebar-logo { padding: 20px 18px; border-bottom: 1px solid var(--border); }
+.logo-badge { display: inline-flex; align-items: center; gap: 8px; }
+.logo-badge .mark { width: 28px; height: 28px; background: var(--accent); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 13px; color: #000; }
+.logo-badge .name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; }
+.logo-badge .sub { color: var(--text3); font-size: 10px; display: block; margin-top: 2px; }
+.nav { padding: 16px 10px; flex: 1; overflow-y: auto; }
+.nav-section { font-size: 9px; letter-spacing: 0.12em; color: var(--text3); text-transform: uppercase; padding: 0 8px 8px; margin-top: 16px; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 7px; cursor: pointer; color: var(--text2); transition: all 0.15s; font-size: 12px; margin-bottom: 2px; }
+.nav-item:hover { background: var(--bg3); color: var(--text); }
+.nav-item.active { background: rgba(245,200,66,0.12); color: var(--accent); }
+.nav-item .icon { font-size: 14px; width: 18px; text-align: center; }
+.sidebar-footer { padding: 16px; border-top: 1px solid var(--border); }
+.project-tag { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+.project-tag .label { font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; }
+.project-tag .value { font-size: 11px; color: var(--text); margin-top: 3px; }
+.page-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 16px; }
+.topbar-meta { display: flex; align-items: center; gap: 16px; }
+.status-pill { display: inline-flex; align-items: center; gap: 6px; background: rgba(79,195,161,0.12); color: var(--accent3); border: 1px solid rgba(79,195,161,0.3); border-radius: 100px; padding: 4px 12px; font-size: 11px; }
+.status-pill .dot { width: 6px; height: 6px; background: var(--accent3); border-radius: 50%; animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.date-badge { color: var(--text3); font-size: 11px; }
+.page { display: none; } .page.active { display: block; }
+.kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+.kpi-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; position: relative; overflow: hidden; }
+.kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--accent-color, var(--accent)); }
+.kpi-card .kpi-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; }
+.kpi-card .kpi-value { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 22px; letter-spacing: -0.03em; color: var(--text); line-height: 1; }
+.kpi-card .kpi-sub { font-size: 10px; color: var(--text3); margin-top: 6px; }
+.kpi-card .kpi-icon { position: absolute; top: 16px; right: 16px; font-size: 18px; opacity: 0.4; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+.panel { background: var(--card); border: 1px solid var(--border); border-radius: 12px; }
+.panel-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+.panel-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px; }
+.panel-body { padding: 20px; }
+.prog-bar { background: var(--bg3); border-radius: 4px; height: 6px; overflow: hidden; }
+.prog-fill { height: 100%; border-radius: 4px; transition: width 1s ease; }
+.tbl { width: 100%; border-collapse: collapse; }
+.tbl th { font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text3); padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--border); background: var(--bg2); }
+.tbl td { padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 12px; vertical-align: middle; }
+.tbl tr:last-child td { border-bottom: none; }
+.tbl tr:hover td { background: rgba(255,255,255,0.02); }
+.tbl .section-row td { background: var(--bg2); color: var(--text3); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; padding: 6px 12px; }
+.badge { display: inline-flex; align-items: center; gap: 4px; border-radius: 5px; padding: 3px 8px; font-size: 10px; font-weight: 500; white-space: nowrap; }
+.badge.green { background: rgba(79,195,161,0.12); color: var(--accent3); }
+.badge.yellow { background: rgba(245,200,66,0.12); color: var(--accent); }
+.badge.red { background: rgba(232,85,85,0.12); color: var(--danger); }
+.badge.orange { background: rgba(232,132,58,0.12); color: var(--accent2); }
+.badge.gray { background: var(--bg3); color: var(--text3); }
+.badge.blue { background: rgba(124,106,255,0.12); color: #7c6aff; }
+.gantt-wrap { overflow-x: auto; }
+.gantt-table { min-width: 900px; width: 100%; border-collapse: collapse; }
+.gantt-table th { font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); padding: 6px 8px; border-bottom: 1px solid var(--border); background: var(--bg2); text-align: center; }
+.gantt-table th.task-col { text-align: left; min-width: 160px; }
+.gantt-table td { padding: 5px 6px; border-bottom: 1px solid var(--border); font-size: 11px; }
+.gantt-table td.day-cell { text-align: center; padding: 4px 1px; width: 18px; min-width: 18px; }
+.gantt-bar { border-radius: 3px; height: 14px; margin: 1px 0; }
+.gantt-section-row td { background: var(--bg2); font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; padding: 5px 8px; }
+.gantt-week-header { background: rgba(245,200,66,0.05) !important; color: var(--accent) !important; font-size: 10px !important; }
+canvas { width: 100% !important; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-field { display: flex; flex-direction: column; gap: 5px; }
+.form-field label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; }
+.form-field input, .form-field select, .form-field textarea { background: var(--bg3); border: 1px solid var(--border); border-radius: 7px; padding: 9px 12px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 12px; outline: none; transition: border-color 0.15s; }
+.form-field input:focus, .form-field select:focus, .form-field textarea:focus { border-color: var(--accent); }
+.form-field textarea { resize: vertical; min-height: 60px; }
+.btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 8px; border: none; cursor: pointer; font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 500; transition: all 0.15s; }
+.btn-primary { background: var(--accent); color: #000; } .btn-primary:hover { background: #ffd84a; }
+.btn-ghost { background: var(--bg3); color: var(--text2); border: 1px solid var(--border); }
+.btn-danger { background: rgba(232,85,85,0.15); color: var(--danger); border: 1px solid rgba(232,85,85,0.3); }
+.btn-success { background: rgba(79,195,161,0.15); color: var(--accent3); border: 1px solid rgba(79,195,161,0.3); }
+.btn-blue { background: rgba(124,106,255,0.15); color: #7c6aff; border: 1px solid rgba(124,106,255,0.3); }
+.pos { color: var(--accent3); } .neg { color: var(--danger); } .neutral { color: var(--text2); }
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+.section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; flex-wrap: wrap; gap: 10px; }
+.section-header h2 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 18px; }
+.section-header p { color: var(--text3); font-size: 11px; margin-top: 3px; }
+.expense-list { max-height: 300px; overflow-y: auto; }
+.full-panel { margin-bottom: 20px; }
+.budget-input { background: var(--bg3); border: 1px solid var(--border); border-radius: 5px; padding: 4px 8px; color: var(--accent); font-family: 'DM Mono', monospace; font-size: 12px; width: 110px; text-align: right; outline: none; }
+.budget-input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(245,200,66,0.15); }
+.lock-bar { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+.lock-bar .lock-status { font-size: 12px; flex: 1; min-width: 180px; }
+.lock-bar .locked-text { color: var(--danger); } .lock-bar .unlocked-text { color: var(--accent3); }
+.modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.65); z-index: 200; align-items: center; justify-content: center; }
+.modal-overlay.show { display: flex; }
+.modal { background: var(--bg2); border: 1px solid var(--border); border-radius: 14px; padding: 28px; width: 520px; max-width: 90vw; max-height: 85vh; overflow-y: auto; }
+.modal h3 { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 16px; margin-bottom: 16px; }
+.modal-actions { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
+.vo-badge { display: inline-flex; align-items: center; gap: 4px; border-radius: 5px; padding: 2px 6px; font-size: 9px; }
+.vo-badge.additive { background: rgba(79,195,161,0.12); color: var(--accent3); }
+.vo-badge.deductive { background: rgba(232,85,85,0.12); color: var(--danger); }
+.milestone-card { display: flex; align-items: flex-start; gap: 16px; padding: 18px 20px; border-bottom: 1px solid var(--border); position: relative; }
+.milestone-card:last-child { border-bottom: none; }
+.milestone-card.paid { background: rgba(79,195,161,0.04); }
+.milestone-card.paid::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--accent3); border-radius:0 2px 2px 0; }
+.pay-check { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border); background: var(--bg3); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; }
+.pay-check.checked { background: var(--accent3); border-color: var(--accent3); color: #000; }
+.ms-pct-badge { width: 52px; height: 52px; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; }
+.ms-info { flex: 1; } .ms-title { font-family: 'Syne', sans-serif; font-weight: 600; font-size: 13px; }
+.ms-trigger { color: var(--text3); font-size: 11px; margin-top: 2px; }
+.ms-amount { font-size: 15px; font-weight: 500; margin-top: 6px; color: var(--accent); }
+.ms-date-input { background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; padding: 5px 10px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 11px; outline: none; }
+.ms-paid-on { font-size: 10px; color: var(--accent3); margin-top: 4px; }
+.wf-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.wf-row:last-child { border-bottom: none; }
+.wf-row-icon { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+.wf-row-icon.in { background: rgba(79,195,161,0.15); color: var(--accent3); }
+.wf-row-icon.out { background: rgba(232,85,85,0.12); color: var(--danger); }
+.wf-row-icon.bal { background: rgba(245,200,66,0.12); color: var(--accent); }
+.wf-row-label { flex: 1; font-size: 11px; color: var(--text2); }
+.wf-row-val { font-size: 13px; font-weight: 500; font-family: 'Syne', sans-serif; }
+.wf-row-val.pos { color: var(--accent3); } .wf-row-val.neg { color: var(--danger); } .wf-row-val.neutral { color: var(--accent); }
+.tx-inflow { color: var(--accent3); } .tx-outflow { color: var(--danger); } .tx-balance { color: var(--accent); font-weight: 500; }
+.gantt-date-input { background: var(--bg3); border: 1px solid var(--border); border-radius: 4px; padding: 3px 4px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 10px; width: 105px; outline: none; }
+.gantt-date-input:focus { border-color: var(--accent); }
+.gantt-date-input:disabled { background: transparent; border-color: transparent; color: var(--text2); width: auto; }
+.gantt-pct-input { background: var(--bg3); border: 1px solid var(--border); border-radius: 4px; padding: 3px 4px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 10px; width: 42px; text-align: center; outline: none; }
+.settings-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
+.settings-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+.settings-card label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; display: block; }
+.settings-card input, .settings-card select { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 7px; padding: 9px 12px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 12px; outline: none; }
+.settings-card input:disabled, .settings-card select:disabled { opacity: 0.5; cursor: not-allowed; }
+.challenge-marker { position: absolute; width: 8px; height: 8px; background: var(--danger); border-radius: 50%; border: 2px solid var(--bg); z-index: 5; cursor: pointer; top: -4px; }
+.challenge-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.challenge-item:last-child { border-bottom: none; }
+.challenge-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--danger); flex-shrink: 0; margin-top: 4px; }
+.challenge-info { flex: 1; }
+.challenge-info .ch-date { font-size: 10px; color: var(--text3); }
+.challenge-info .ch-title { font-size: 12px; margin-top: 2px; }
+.challenge-info .ch-desc { font-size: 11px; color: var(--text2); margin-top: 4px; }
+/* Access control */
+.client-mode .contractor-only { display: none !important; }
+.passcode-input { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 20px; letter-spacing: 8px; text-align: center; outline: none; width: 100%; }
+.passcode-input:focus { border-color: var(--accent); }
+.passcode-input.error { border-color: var(--danger); animation: shake 0.3s ease; }
+@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+.client-mode .gantt-date-input { display: none; }
+.client-mode .gantt-pct-input { display: none; }
+.client-mode .lock-bar { display: none !important; }
+@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+.access-banner { padding: 8px 16px; font-size: 11px; text-align: center; border-bottom: 1px solid var(--border); }
+.access-banner.client { background: rgba(79,195,161,0.08); color: var(--accent3); }
+.access-banner.contractor { background: rgba(245,200,66,0.08); color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="shell client-mode" id="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-logo"><div class="logo-badge"><div class="mark">24</div><div><div class="name">24BS Monitor</div><span class="sub">v3.0</span></div></div></div>
+    <nav class="nav">
+      <div class="nav-section">Project</div>
+      <div class="nav-item contractor-only" onclick="showPage('settings',this)"><span class="icon">⚙</span> Settings</div>
+      <div class="nav-item active" onclick="showPage('dashboard',this)"><span class="icon">▦</span> Dashboard</div>
+      <div class="nav-section">Schedule</div>
+      <div class="nav-item" onclick="showPage('gantt',this)"><span class="icon">▬</span> Gantt & S-Curve</div>
+      <div class="nav-section contractor-only">Finance</div>
+      <div class="nav-item contractor-only" onclick="showPage('contract',this)"><span class="icon">📋</span> Contract</div>
+      <div class="nav-item contractor-only" onclick="showPage('budget',this)"><span class="icon">◎</span> Budget Monitoring</div>
+      <div class="nav-item contractor-only" onclick="showPage('payments',this)"><span class="icon">◇</span> Payments</div>
+      <div class="nav-item contractor-only" onclick="showPage('cashflow',this)"><span class="icon">⇅</span> Cash Flow</div>
+      <div class="nav-item contractor-only" onclick="showPage('expenses',this)"><span class="icon">✦</span> Expenses</div>
+      <div class="nav-section contractor-only">Analysis</div>
+      <div class="nav-item contractor-only" onclick="showPage('compare',this)"><span class="icon">⇄</span> Budget vs Selling</div>
+      <!-- Unlock/Lock access -->
+      <div style="margin-top:auto;padding:12px 8px;border-top:1px solid var(--border)">
+        <div id="access-lock-btn" class="nav-item" onclick="toggleAccessMode()" style="background:var(--bg3);justify-content:center;color:var(--text3)">
+          <span class="icon" id="access-icon">🔒</span> <span id="access-label">Contractor Login</span>
+        </div>
+        <div id="access-mode-badge" style="text-align:center;margin-top:6px;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3)">
+          <span id="access-mode-text">Client View</span>
+        </div>
+      </div>
+    </nav>
+    <div class="sidebar-footer"><div class="project-tag"><div class="label">Contract</div><div class="value" id="sidebar-contract">₱3,126,515.20</div><div class="label" style="margin-top:6px">Duration</div><div class="value" id="sidebar-dur">45 Working Days</div></div></div>
+  </aside>
+  <div class="main">
+    <header class="topbar">
+  <div style="display:flex;align-items:center;gap:14px">
+    <a href="index.html" style="color:var(--text3);text-decoration:none;font-size:11px;display:inline-flex;align-items:center;gap:5px;padding:6px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;white-space:nowrap" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text3)'">← All Projects</a>
+    <div class="page-title" id="pageTitle">Dashboard</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px">
+    <span id="unsaved-badge" style="display:none;font-size:10px;color:var(--accent2);padding:4px 10px;background:rgba(232,132,58,0.1);border:1px solid rgba(232,132,58,0.3);border-radius:5px">● Unsaved changes</span>
+    <button id="save-btn" class="btn btn-success contractor-only" onclick="manualSave()" style="padding:8px 16px;font-size:11px;display:none">💾 Save</button>
+  </div><div class="topbar-meta"><span class="status-pill"><span class="dot"></span> <span id="topbar-status">In Progress</span></span><span class="date-badge" id="topbar-date"></span></div></header>
+    <div class="access-banner client" id="access-banner">👁 Client View — Dashboard & Schedule only. <a href="#" onclick="toggleAccessMode();return false" style="color:var(--accent);text-decoration:underline">Contractor Login</a></div>
+    <div class="content">
+
+      <!-- SETTINGS PAGE -->
+      <div class="page" id="page-settings">
+        <div class="section-header"><div><h2>Project Settings</h2><p>Configure project parameters before locking schedule</p></div></div>
+        <div class="settings-grid" style="grid-template-columns:1fr 1fr">
+          <div class="settings-card" style="grid-column:1/-1">
+            <label>Project Title</label>
+            <input type="text" id="set-project-title" value="24 Bakeshop Store / HQ" oninput="onTitleChange()">
+          </div>
+          <div class="settings-card" style="grid-column:1/-1">
+            <label>Project Description (shown on dashboard)</label>
+            <textarea id="set-project-desc" rows="2" placeholder="Brief description of the project scope, location, or notes for the client..." oninput="onDescChange()" style="background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:9px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;outline:none;width:100%;resize:vertical;min-height:60px"></textarea>
+          </div>
+        </div>
+        <!-- Project Photo -->
+        <div class="panel full-panel">
+          <div class="panel-header"><span class="panel-title">Project Cover Photo</span><span style="font-size:10px;color:var(--text3)">Shown as banner on the dashboard</span></div>
+          <div class="panel-body" style="display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap">
+            <div id="photo-preview" style="width:200px;height:120px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:11px;flex-shrink:0;background-size:cover;background-position:center;overflow:hidden">No photo</div>
+            <div style="flex:1;min-width:180px">
+              <div style="font-size:11px;color:var(--text2);margin-bottom:12px;line-height:1.6">Upload a photo of the project site, renders, or progress photos. Appears as a banner on the client dashboard.</div>
+              <label class="btn btn-ghost" style="cursor:pointer;display:inline-flex">
+                📷 Upload Photo
+                <input type="file" accept="image/*" onchange="onPhotoUpload(this)" style="display:none">
+              </label>
+              <button class="btn btn-danger" onclick="removePhoto()" style="margin-left:8px;padding:9px 14px;font-size:11px" id="remove-photo-btn">Remove</button>
+            </div>
+          </div>
+        </div>
+        <div class="settings-grid">
+          <div class="settings-card">
+            <label>Project Start Date (Day 0)</label>
+            <input type="date" id="set-start-date" value="2026-03-23" onchange="onSettingsChange()">
+          </div>
+          <div class="settings-card">
+            <label>Working Days Mode</label>
+            <select id="set-work-mode" onchange="onSettingsChange()">
+              <option value="office">Office (Mon–Fri)</option>
+              <option value="construction" selected>Construction (Mon–Sat)</option>
+            </select>
+          </div>
+          <div class="settings-card">
+            <label>Total Working Days</label>
+            <input type="number" id="set-total-days" value="45" onchange="onSettingsChange()">
+          </div>
+        </div>
+        <div class="panel full-panel">
+          <div class="panel-header"><span class="panel-title">Holidays (excluded from working days)</span>
+            <button class="btn btn-primary" onclick="addHoliday()" style="padding:6px 12px;font-size:11px">+ Add Holiday</button>
+          </div>
+          <div class="panel-body" style="padding:0">
+            <table class="tbl" id="holiday-table">
+              <thead><tr><th>Date</th><th>Description</th><th></th></tr></thead>
+              <tbody id="holiday-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="panel full-panel">
+          <div class="panel-header"><span class="panel-title">Day ↔ Date Mapping (auto-computed)</span></div>
+          <div class="panel-body" style="padding:0;max-height:300px;overflow-y:auto">
+            <table class="tbl" id="day-map-table">
+              <thead><tr><th>Day</th><th>Date</th><th>Weekday</th></tr></thead>
+              <tbody id="day-map-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="panel full-panel">
+          <div class="panel-header"><span class="panel-title">Access Control</span></div>
+          <div class="panel-body">
+            <div style="display:flex;flex-direction:column;gap:20px">
+              <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding-bottom:16px;border-bottom:1px solid var(--border)">
+                <div style="flex:1;font-size:11px;color:var(--text2)">
+                  <strong style="color:var(--text)">Contractor Passcode</strong><br>
+                  Unlocks full access — budget, expenses, payments, cash flow, and settings.
+                </div>
+                <div class="form-field" style="width:160px">
+                  <label>Contractor Passcode</label>
+                  <input type="text" id="set-passcode" value="0000" onchange="onPasscodeSettingChange()" style="text-align:center;letter-spacing:4px;font-size:16px">
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+                <div style="flex:1;font-size:11px;color:var(--text2)">
+                  <strong style="color:var(--text)">Client Comment Passcode</strong><br>
+                  Clients must enter this to post comments or approvals. Leave blank to allow anyone to comment without a passcode.
+                </div>
+                <div class="form-field" style="width:160px">
+                  <label>Client Passcode</label>
+                  <input type="text" id="set-client-passcode" placeholder="Leave blank = open" onchange="onClientPasscodeSettingChange()" style="text-align:center;letter-spacing:4px;font-size:16px">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="panel full-panel">
+          <div class="panel-header"><span class="panel-title">Data Management</span></div>
+          <div class="panel-body" style="display:flex;flex-direction:column;gap:14px">
+            <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding-bottom:14px;border-bottom:1px solid var(--border)">
+              <div style="flex:1;font-size:11px;color:var(--text2)">
+                <strong style="color:var(--text)">Reset Settings Only</strong><br>
+                Resets project title, dates, holidays, and passcode. Keeps all expenses, schedule, budget, and contract data intact.
+              </div>
+              <button class="btn btn-ghost" onclick="resetSettingsOnly()" style="flex-shrink:0">⟲ Reset Settings</button>
+            </div>
+            <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+              <div style="flex:1;font-size:11px;color:var(--text2)">
+                <strong style="color:var(--danger)">Full Reset</strong><br>
+                Permanently deletes ALL project data — expenses, schedule, budget, contract, everything. Cannot be undone.
+              </div>
+              <button class="btn btn-danger" onclick="clearSavedData()" style="flex-shrink:0">⚠ Full Reset</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DASHBOARD -->
+      <div class="page active" id="page-dashboard">
+        <!-- Project Banner: photo box left, info right -->
+        <div id="dash-project-banner" style="margin-bottom:20px;border-radius:14px;overflow:hidden;border:1px solid var(--border);background:var(--card);display:flex;gap:0">
+          <!-- Photo box — fixed size, shown only when photo exists -->
+          <div id="dash-banner-img" style="display:none;width:200px;min-width:200px;background:var(--bg3);background-size:cover;background-position:center;border-right:1px solid var(--border);flex-shrink:0"></div>
+          <!-- Info panel -->
+          <div style="flex:1;padding:22px 26px;display:flex;flex-direction:column;justify-content:space-between;min-width:0">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap">
+              <div style="flex:1;min-width:0">
+                <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:5px">Active Project</div>
+                <h2 id="dash-project-title" style="font-family:Syne,sans-serif;font-weight:700;font-size:20px;margin-bottom:3px;line-height:1.2">24 Bakeshop Store / HQ</h2>
+                <p id="dash-prepared-by" style="font-size:11px;color:var(--text3);margin-bottom:0">Prepared by: Carl Joshua E. De Mesa, Licensed Engineer</p>
+                <p id="dash-project-desc" style="font-size:12px;color:var(--text2);margin-top:8px;line-height:1.65;display:none"></p>
+              </div>
+              <div style="text-align:right;flex-shrink:0">
+                <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:3px">Contract Value</div>
+                <div id="dash-contract" style="font-family:Syne,sans-serif;font-weight:700;font-size:26px;color:var(--accent);line-height:1">₱3.13M</div>
+                <div id="dash-contract-sub" style="font-size:10px;color:var(--text3);margin-top:3px"></div>
+              </div>
+            </div>
+            <!-- Progress bar -->
+            <div style="display:flex;align-items:center;gap:12px;margin-top:16px;padding-top:14px;border-top:1px solid var(--border)">
+              <div style="flex:1;background:var(--bg3);border-radius:4px;height:5px;overflow:hidden">
+                <div id="dash-banner-progress-fill" style="height:100%;border-radius:4px;background:var(--accent3);transition:width 1s ease;width:0%"></div>
+              </div>
+              <span id="dash-banner-progress-label" style="font-family:Syne,sans-serif;font-weight:700;font-size:13px;color:var(--accent3);white-space:nowrap">0%</span>
+              <span id="kpi-progress-sub" style="font-size:10px;color:var(--text3)">overall progress</span>
+              <span id="kpi-progress-main" style="display:none">0%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 1: KPI cards (3 visible to client, 2 extra for contractor) -->
+        <div class="kpi-grid" style="margin-bottom:20px">
+          <div class="kpi-card" style="--accent-color:var(--accent3)">
+            <div class="kpi-icon">📅</div><div class="kpi-label">Days Elapsed</div>
+            <div class="kpi-value" id="kpi-days-elapsed">—</div>
+            <div class="kpi-sub" id="kpi-days-sub">of — working days</div>
+          </div>
+          <div class="kpi-card" style="--accent-color:var(--accent)">
+            <div class="kpi-icon">✓</div><div class="kpi-label">Scope Complete</div>
+            <div class="kpi-value" id="kpi-tasks-done">0</div>
+            <div class="kpi-sub" id="kpi-tasks-sub">tasks finished</div>
+          </div>
+          <div class="kpi-card contractor-only" style="--accent-color:var(--accent2)"><div class="kpi-icon">₱</div><div class="kpi-label">Actual Spent</div><div class="kpi-value" id="kpi-actual">₱0</div><div class="kpi-sub" id="kpi-actual-pct">0% of budget</div></div>
+          <div class="kpi-card contractor-only" style="--accent-color:#7c6aff"><div class="kpi-icon">↑</div><div class="kpi-label">Anticipated Income</div><div class="kpi-value pos" id="kpi-income">₱0</div><div class="kpi-sub" id="kpi-income-sub">0% margin</div></div>
+        </div>
+
+        <!-- Row 2: S-Curve (full width, always visible) + contractor donuts -->
+        <div class="panel full-panel" style="margin-bottom:20px">
+          <div class="panel-header">
+            <span class="panel-title">Progress S-Curve</span>
+            <div style="display:flex;gap:14px;align-items:center;font-size:11px">
+              <span style="color:var(--accent)">━ Planned</span>
+              <span style="color:var(--accent3)">━ Actual (Cost)</span>
+              <span style="color:#7c6aff">╌ Actual (Schedule)</span>
+              <span style="color:var(--danger)">● Issues</span>
+              <span style="color:#29b6f6">▼ Today</span>
+            </div>
+          </div>
+          <div class="panel-body" style="padding:14px"><div style="position:relative;height:220px"><canvas id="dash-scurve-chart"></canvas></div></div>
+        </div>
+        <!-- Contractor-only donuts -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px" class="contractor-only">
+          <div class="panel">
+            <div class="panel-header"><span class="panel-title">Budget Health</span></div>
+            <div class="panel-body" style="display:flex;align-items:center;justify-content:center;padding:16px">
+              <canvas id="dash-donut-budget" width="160" height="160" style="max-width:160px"></canvas>
+              <div id="dash-budget-legend" style="margin-left:16px;font-size:11px"></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-header"><span class="panel-title">Cash Flow Summary</span></div>
+            <div class="panel-body" style="display:flex;align-items:center;justify-content:center;padding:16px">
+              <canvas id="dash-donut-cash" width="160" height="160" style="max-width:160px"></canvas>
+              <div id="dash-cash-legend" style="margin-left:16px;font-size:11px"></div>
+            </div>
+          </div>
+        </div>
+        <!-- Row 3: Quick status panels (contractor only) -->
+        <div class="grid-2 contractor-only">
+          <div class="panel">
+            <div class="panel-header"><span class="panel-title">Payment Milestones</span><span class="badge gray" id="dash-pay-badge"></span></div>
+            <div class="panel-body" style="padding:0;max-height:200px;overflow-y:auto" id="dash-pay-list"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-header"><span class="panel-title">Recent Expenses</span><span class="badge yellow" id="dash-exp-badge"></span></div>
+            <div class="panel-body" style="padding:0;max-height:200px;overflow-y:auto" id="dash-exp-list"></div>
+          </div>
+        </div>
+        <!-- Row 4: Scope overview -->
+        <div class="panel full-panel">
+          <div class="panel-header"><span class="panel-title">Scope Status</span><span class="badge gray" id="dash-scope-summary"></span></div>
+          <div class="panel-body" style="padding:0;overflow-x:auto">
+            <table class="tbl"><thead><tr><th>#</th><th>Task</th><th>Target End</th><th>Contract Cost</th><th>Actual Start</th><th>% Done</th><th>Status</th></tr></thead>
+            <tbody id="dash-scope-tbody"></tbody></table>
+          </div>
+        </div>
+        <!-- Row 5: Comments & Approvals -->
+        <div class="panel full-panel">
+          <div class="panel-header">
+            <span class="panel-title">Comments & Approvals</span>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span id="comment-unlock-badge" style="display:none;font-size:10px;color:var(--accent3)">🔓 Unlocked</span>
+              <span style="font-size:10px;color:var(--text3)" id="sync-status">Offline (Local)</span>
+            </div>
+          </div>
+          <div class="panel-body" style="padding:0">
+            <div id="comments-list" style="max-height:250px;overflow-y:auto"></div>
+            <!-- Locked state: passcode required -->
+            <div id="comment-locked-bar" style="padding:14px 16px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;background:rgba(245,200,66,0.04)">
+              <span style="font-size:16px">🔒</span>
+              <div style="flex:1;font-size:11px;color:var(--text2)">Enter your client passcode to post comments or approvals.</div>
+              <button class="btn btn-primary" onclick="openClientPasscodeModal()" style="padding:8px 14px;font-size:11px">Unlock Comments</button>
+            </div>
+            <!-- Unlocked state: comment input -->
+            <div id="comment-input-bar" style="padding:12px 16px;border-top:1px solid var(--border);display:none;gap:8px;flex-wrap:wrap">
+              <input type="text" id="comment-input" placeholder="Add a comment or note..." style="flex:1;min-width:200px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:9px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;outline:none" onkeyup="if(event.key==='Enter')addComment()">
+              <button class="btn btn-primary" onclick="addComment()" style="padding:9px 14px">Send</button>
+              <button class="btn btn-success" onclick="addApproval('Progress approved — proceed as planned')" style="padding:9px 14px" title="Quick approval">✓ Approve</button>
+              <button class="btn btn-ghost" onclick="lockComments()" style="padding:9px 12px;font-size:11px" title="Lock again">🔒</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- GANTT + S-CURVE (Combined) -->
+      <div class="page" id="page-gantt">
+        <div class="section-header"><div><h2>Gantt Chart & Progress</h2><p>Schedule + S-Curve overlay · Challenges log</p></div></div>
+        <div class="lock-bar" id="gantt-lock-bar">
+          <span style="font-size:18px" id="gantt-lock-icon">🔓</span>
+          <div class="lock-status"><span id="gantt-lock-label" class="unlocked-text">Schedule UNLOCKED — set target start/end dates</span></div>
+          <button class="btn btn-danger" id="gantt-lock-btn" onclick="toggleScheduleLock()">🔒 Lock Baseline</button>
+      <span style="font-size:10px;color:var(--text3);margin-left:4px" id="gantt-lock-hint">Lock schedule first to enter Actual Start dates and % progress</span>
+        </div>
+        <!-- Gantt Table -->
+        <div class="panel full-panel">
+          <div class="panel-header"><span class="panel-title">Schedule</span><span class="badge gray" id="gantt-progress-badge">0% complete</span></div>
+          <div class="panel-body" style="padding:0;overflow-x:auto">
+            <table class="tbl" id="gantt-tbl">
+              <thead id="gantt-thead"></thead>
+              <tbody id="gantt-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+        <!-- S-Curve overlay (only visible when locked) -->
+        <div class="panel full-panel" id="scurve-panel">
+          <div class="panel-header">
+            <span class="panel-title">Progress Curves (S-Curve)</span>
+            <div style="display:flex;gap:14px;align-items:center;font-size:11px">
+              <span style="color:var(--accent)">━ Planned</span>
+              <span style="color:var(--accent3)">━ Actual (Cost)</span>
+              <span style="color:#7c6aff">╌ Actual (Schedule)</span>
+              <span style="color:var(--danger)">● Issues</span>
+              <span style="color:#29b6f6">▼ Today</span>
+            </div>
+          </div>
+          <div class="panel-body" style="padding:12px"><div style="position:relative;height:200px"><canvas id="scurve-chart"></canvas></div></div>
+        </div>
+        <div class="grid-2">
+          <div class="panel">
+            <div class="panel-header"><span class="panel-title">Projected Completion</span></div>
+            <div class="panel-body">
+              <div id="scurve-projection" style="font-size:12px;color:var(--text2)">Lock schedule and enter progress to see projections.</div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-header"><span class="panel-title">Challenges / Issues</span>
+              <button class="btn btn-danger" onclick="openChallengeModal()" style="padding:6px 12px;font-size:11px">+ Add Issue</button>
+            </div>
+            <div class="panel-body" style="padding:0;max-height:250px;overflow-y:auto">
+              <div id="challenge-list" style="padding:12px 20px"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONTRACT -->
+      <div class="page" id="page-contract">
+        <div class="section-header"><div><h2>Contract Setup</h2><p>Define line items per category · Lock to finalize contract · Pushes to Budget Monitoring & Gantt</p></div></div>
+        <div class="lock-bar" id="contract-lock-bar">
+          <span style="font-size:18px" id="contract-lock-icon">🔓</span>
+          <div class="lock-status"><span id="contract-lock-label" class="unlocked-text">Contract UNLOCKED — edit line items and amounts</span></div>
+          <button class="btn btn-danger" id="contract-lock-btn" onclick="toggleContractLock()">🔒 Lock Contract</button>
+        </div>
+        <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr)">
+          <div class="kpi-card" style="--accent-color:var(--accent)"><div class="kpi-label">Total Contract Value</div><div class="kpi-value" id="ct-total">₱0</div><div class="kpi-sub" id="ct-items-count">0 items</div></div>
+          <div class="kpi-card" style="--accent-color:var(--accent3)"><div class="kpi-label">Categories</div><div class="kpi-value" id="ct-cat-count">0</div><div class="kpi-sub">Active categories</div></div>
+          <div class="kpi-card" style="--accent-color:#7c6aff"><div class="kpi-label">Status</div><div class="kpi-value" id="ct-status" style="font-size:16px">Draft</div><div class="kpi-sub" id="ct-status-sub">Not yet locked</div></div>
+        </div>
+        <!-- Contract line items table -->
+        <div class="panel full-panel">
+          <div class="panel-header">
+            <span class="panel-title">Contract Line Items</span>
+            <div style="display:flex;gap:8px" id="ct-actions">
+              <button class="btn btn-success" onclick="openContractItemModal()" style="padding:6px 12px;font-size:11px">+ Add Item</button>
+              <button class="btn btn-blue" onclick="openContractCatModal()" style="padding:6px 12px;font-size:11px">+ Add Category</button>
+            </div>
+          </div>
+          <div style="padding:0;overflow-x:auto">
+            <table class="tbl" id="contract-table">
+              <thead><tr><th>Code</th><th>Description</th><th>Amount (₱)</th><th>Weight %</th><th></th></tr></thead>
+              <tbody id="contract-tbody"></tbody>
+              <tfoot id="contract-tfoot"></tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONTRACT ITEM MODAL -->
+      <div class="modal-overlay" id="contract-item-modal"><div class="modal"><h3 id="ct-modal-title">+ Add Line Item</h3><div class="form-grid">
+        <div class="form-field"><label>Category</label><select id="ct-item-cat"></select></div>
+        <div class="form-field"><label>Cost Code</label><input type="text" id="ct-item-code"></div>
+        <div class="form-field" style="grid-column:1/-1"><label>Description</label><input type="text" id="ct-item-desc" placeholder="e.g. Gypsum Board on Metal Studs"></div>
+        <div class="form-field"><label>Contract Amount (₱)</label><input type="number" id="ct-item-amount" placeholder="0.00"></div>
+        <div class="form-field"><label>Notes</label><input type="text" id="ct-item-notes" placeholder="Optional"></div>
+      </div><div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('contract-item-modal')">Cancel</button><button class="btn btn-primary" onclick="submitContractItem()">Add</button></div></div></div>
+
+      <!-- CONTRACT CATEGORY MODAL -->
+      <div class="modal-overlay" id="contract-cat-modal"><div class="modal"><h3>+ Add Category</h3><div class="form-grid">
+        <div class="form-field" style="grid-column:1/-1"><label>Category Name</label><input type="text" id="ct-cat-name" placeholder="e.g. HVAC Works"></div>
+        <div class="form-field"><label>Code Prefix (2 letters)</label><input type="text" id="ct-cat-prefix" placeholder="e.g. HV" maxlength="3" style="text-transform:uppercase"></div>
+      </div><div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('contract-cat-modal')">Cancel</button><button class="btn btn-primary" onclick="submitContractCat()">Add Category</button></div></div></div>
+
+      <!-- BUDGET MONITORING -->
+      <div class="page" id="page-budget">
+        <div class="section-header"><div><h2>Budget Monitoring</h2><p>Set budget as % of contract per line item · Track anticipated income</p></div></div>
+        <div class="lock-bar">
+          <span style="font-size:18px" id="lock-icon">🔓</span>
+          <div class="lock-status"><span id="lock-label" class="unlocked-text">Budget UNLOCKED</span></div>
+          <button class="btn btn-success" id="add-item-btn" onclick="openAddItemModal()">+ Add Line Item</button>
+          <button class="btn btn-danger" id="lock-btn" onclick="toggleBudgetLock()">🔒 Lock</button>
+          <button class="btn btn-blue" id="vo-btn" onclick="openVOModal()" style="display:none">± Variation Order</button>
+        </div>
+        <div class="kpi-grid">
+          <div class="kpi-card" style="--accent-color:var(--accent)"><div class="kpi-label">Total Contract</div><div class="kpi-value" id="bvc-contract-total"></div><div class="kpi-sub">Selling price (fixed)</div></div>
+          <div class="kpi-card" style="--accent-color:var(--accent3)"><div class="kpi-label">Total Budget</div><div class="kpi-value" id="bvc-budget-total"></div><div class="kpi-sub" id="bvc-budget-pct-sub"></div></div>
+          <div class="kpi-card" style="--accent-color:var(--accent2)"><div class="kpi-label">Anticipated Income</div><div class="kpi-value" id="bvc-income"></div><div class="kpi-sub" id="bvc-income-sub"></div></div>
+          <div class="kpi-card" style="--accent-color:#7c6aff"><div class="kpi-label">Actual Spent</div><div class="kpi-value" id="bvc-actual"></div><div class="kpi-sub" id="bvc-pct"></div></div>
+        </div>
+        <div class="panel full-panel">
+          <div class="panel-header"><span class="panel-title">Contract Line Items</span><span class="badge gray" id="bvc-active-badge"></span></div>
+          <div style="padding:0;overflow-x:auto">
+            <table class="tbl" id="bvc-table">
+              <thead><tr><th>Code</th><th>Description</th><th>Contract Amt</th><th>Budget %</th><th>Budget ₱</th><th>Actual</th><th>Anticipated Income</th><th>Margin %</th><th>Status</th><th></th></tr></thead>
+              <tbody></tbody>
+              <tfoot id="bvc-tfoot"></tfoot>
+            </table>
+          </div>
+        </div>
+        <!-- Manpower section -->
+        <div class="panel full-panel">
+          <div class="panel-header"><span class="panel-title">Manpower / Labor (Internal Cost)</span><span class="badge orange">Not in contract</span></div>
+          <div style="padding:4px 16px 12px;font-size:11px;color:#7c6aff;background:rgba(124,106,255,0.05);border-bottom:1px solid var(--border)">ℹ This is a separate internal cost. Enter amounts manually. These are NOT part of the contract selling price but will reduce your anticipated income.</div>
+          <div style="padding:0;overflow-x:auto">
+            <table class="tbl" id="mp-table">
+              <thead><tr><th>Code</th><th>Description</th><th>Budget ₱</th><th>Actual</th><th>Remaining</th><th>% Used</th><th>Status</th><th></th></tr></thead>
+              <tbody></tbody>
+              <tfoot id="mp-tfoot"></tfoot>
+            </table>
+          </div>
+        </div>
+        <!-- VO Log -->
+        <div class="panel full-panel" id="vo-log-panel" style="display:none"><div class="panel-header"><span class="panel-title">VO Log</span><span class="badge blue" id="vo-log-count"></span></div>
+          <div style="padding:0;overflow-x:auto"><table class="tbl"><thead><tr><th>VO#</th><th>Date</th><th>Type</th><th>Code</th><th>Desc</th><th>Amount</th><th>Reason</th><th></th></tr></thead><tbody id="vo-tbody"></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- PAYMENTS -->
+      <div class="page" id="page-payments">
+        <div class="section-header"><div><h2>Payment Schedule</h2></div></div>
+        <div class="kpi-grid">
+          <div class="kpi-card" style="--accent-color:var(--accent3)"><div class="kpi-label">Collected</div><div class="kpi-value" id="pay-collected">₱0</div><div class="kpi-sub" id="pay-collected-pct"></div></div>
+          <div class="kpi-card" style="--accent-color:var(--accent2)"><div class="kpi-label">Outstanding</div><div class="kpi-value" id="pay-outstanding"></div><div class="kpi-sub" id="pay-outstanding-pct"></div></div>
+          <div class="kpi-card" style="--accent-color:var(--accent)"><div class="kpi-label">Expenses</div><div class="kpi-value" id="pay-expenses"></div><div class="kpi-sub">Logged</div></div>
+          <div class="kpi-card" style="--accent-color:#7c6aff"><div class="kpi-label">Net Cash</div><div class="kpi-value" id="pay-net">₱0</div><div class="kpi-sub">Collected - Expenses</div></div>
+        </div>
+        <div class="grid-2">
+          <div class="panel"><div class="panel-header"><span class="panel-title">Milestones</span><span class="badge gray" id="pay-paid-count"></span></div><div class="panel-body" style="padding:0"><div id="milestone-list"></div></div></div>
+          <div class="panel"><div class="panel-header"><span class="panel-title">Summary</span><span class="badge yellow" id="pay-balance-badge"></span></div><div class="panel-body" style="padding:0"><div id="cashflow-waterfall" style="padding:16px 20px"></div></div></div>
+        </div>
+      </div>
+
+      <!-- CASH FLOW -->
+      <div class="page" id="page-cashflow">
+        <div class="section-header"><div><h2>Cash Flow</h2></div></div>
+        <div class="kpi-grid">
+          <div class="kpi-card" style="--accent-color:var(--accent3)"><div class="kpi-label">Inflows</div><div class="kpi-value" id="cf-collected">₱0</div><div class="kpi-sub" id="cf-collected-pct"></div></div>
+          <div class="kpi-card" style="--accent-color:var(--danger)"><div class="kpi-label">Outflows</div><div class="kpi-value" id="cf-outflows"></div><div class="kpi-sub">Expenses</div></div>
+          <div class="kpi-card" style="--accent-color:var(--accent)"><div class="kpi-label">Net</div><div class="kpi-value" id="cf-net"></div><div class="kpi-sub">In - Out</div></div>
+          <div class="kpi-card" style="--accent-color:var(--accent2)"><div class="kpi-label">Unbilled</div><div class="kpi-value" id="cf-outstanding"></div><div class="kpi-sub" id="cf-outstanding-pct"></div></div>
+        </div>
+        <div class="panel full-panel"><div class="panel-header"><span class="panel-title">Transactions</span></div><div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Date</th><th>Type</th><th>Description</th><th>Inflow</th><th>Outflow</th><th>Balance</th><th>Status</th></tr></thead><tbody id="cashflow-tbody"></tbody></table></div></div>
+      </div>
+
+      <!-- EXPENSES -->
+      <div class="page" id="page-expenses">
+        <div class="section-header"><div><h2>Expense Log</h2></div></div>
+        <div class="grid-2">
+          <div class="panel"><div class="panel-header"><span class="panel-title">Add Expense</span></div><div class="panel-body">
+            <div class="form-grid">
+              <div class="form-field"><label>Date</label><input type="date" id="exp-date"></div>
+              <div class="form-field"><label>Cost Code</label><select id="exp-code"></select></div>
+              <div class="form-field" style="grid-column:1/-1"><label>Description</label><input type="text" id="exp-desc"></div>
+              <div class="form-field"><label>Supplier</label><input type="text" id="exp-supplier"></div>
+              <div class="form-field"><label>Amount (PHP)</label><input type="number" id="exp-amount" placeholder="0.00"></div>
+              <div class="form-field"><label>Mode</label><select id="exp-payment"><option>Cash</option><option>Bank Transfer</option><option>Check</option><option>Online</option></select></div>
+              <div class="form-field"><label>Ref</label><input type="text" id="exp-ref"></div>
+            </div>
+            <div style="margin-top:16px;display:flex;gap:10px"><button class="btn btn-primary" onclick="addExpense()">+ Add</button><button class="btn btn-ghost" onclick="clearExpenseForm()">Clear</button></div>
+          </div></div>
+          <div class="panel"><div class="panel-header"><span class="panel-title">Log</span><span class="badge yellow" id="exp-total-badge"></span></div>
+            <div class="expense-list"><table class="tbl"><thead><tr><th>Date</th><th>Code</th><th>Desc</th><th>Supplier</th><th>Amount</th><th>Mode</th><th></th></tr></thead><tbody id="expense-tbody"></tbody></table></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- COMPARE -->
+      <div class="page" id="page-compare">
+        <div class="section-header"><div><h2>Budget vs Selling</h2></div></div>
+        <div class="kpi-grid">
+          <div class="kpi-card" style="--accent-color:var(--accent)"><div class="kpi-label">Budget</div><div class="kpi-value" style="color:var(--accent)" id="cmp-budget"></div><div class="kpi-sub">Internal</div></div>
+          <div class="kpi-card" style="--accent-color:var(--accent2)"><div class="kpi-label">Selling</div><div class="kpi-value" style="color:var(--accent2)" id="cmp-selling"></div><div class="kpi-sub">Contract</div></div>
+          <div class="kpi-card" style="--accent-color:var(--accent3)"><div class="kpi-label">Profit</div><div class="kpi-value" style="color:var(--accent3)" id="cmp-profit"></div><div class="kpi-sub">Selling - Budget</div></div>
+          <div class="kpi-card" style="--accent-color:#7c6aff"><div class="kpi-label">Margin</div><div class="kpi-value" style="color:#7c6aff" id="cmp-margin"></div><div class="kpi-sub">%</div></div>
+        </div>
+        <div class="panel full-panel"><div style="overflow-x:auto"><table class="tbl" id="compare-table"><thead><tr><th>Code</th><th>Description</th><th>Budget</th><th>Selling</th><th>Markup</th><th>%</th></tr></thead><tbody></tbody></table></div></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="vo-modal"><div class="modal"><h3>± Variation Order</h3><div class="form-grid"><div class="form-field"><label>Type</label><select id="vo-type"><option value="additive">+ Additive</option><option value="deductive">− Deductive</option></select></div><div class="form-field"><label>Date</label><input type="date" id="vo-date"></div><div class="form-field" style="grid-column:1/-1"><label>Code</label><select id="vo-code"></select></div><div class="form-field"><label>Amount</label><input type="number" id="vo-amount"></div><div class="form-field"><label>Ref</label><input type="text" id="vo-ref"></div><div class="form-field" style="grid-column:1/-1"><label>Reason</label><input type="text" id="vo-reason"></div></div><div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('vo-modal')">Cancel</button><button class="btn btn-primary" onclick="submitVO()">Submit</button></div></div></div>
+
+<div class="modal-overlay" id="add-item-modal"><div class="modal"><h3>+ Add Line Item</h3><div class="form-grid"><div class="form-field"><label>Category</label><select id="new-item-cat" onchange="suggestNextCode()"><option>General Requirements</option><option>Drywall / Doors & Windows</option><option>Ceiling Works</option><option>Carpentry Works</option><option>Floor Finishes</option><option>Wall Finishes</option><option>Ceiling Finishes</option><option>Plumbing Works</option><option>Electrical Works</option><option>Manpower / Labor</option></select></div><div class="form-field"><label>Code</label><input type="text" id="new-item-code"></div><div class="form-field" style="grid-column:1/-1"><label>Description</label><input type="text" id="new-item-desc"></div><div class="form-field"><label>Selling Budget</label><input type="number" id="new-item-selling"></div><div class="form-field"><label>Internal Budget</label><input type="number" id="new-item-budget"></div></div><div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('add-item-modal')">Cancel</button><button class="btn btn-primary" onclick="submitAddItem()">+ Add</button></div></div></div>
+
+<div class="modal-overlay" id="challenge-modal"><div class="modal"><h3>⚠ Log Challenge / Issue</h3><p style="font-size:11px;color:var(--text3);margin-bottom:16px">This will appear as a marker on the S-Curve chart.</p><div class="form-grid"><div class="form-field"><label>Date Occurred</label><input type="date" id="ch-date"></div><div class="form-field"><label>Severity</label><select id="ch-severity"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option><option value="critical">Critical</option></select></div><div class="form-field" style="grid-column:1/-1"><label>Issue Title</label><input type="text" id="ch-title" placeholder="e.g. Material delivery delayed"></div><div class="form-field" style="grid-column:1/-1"><label>Description / Impact</label><textarea id="ch-desc" placeholder="Describe the issue and how it affects the project..."></textarea></div></div><div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('challenge-modal')">Cancel</button><button class="btn btn-danger" onclick="submitChallenge()">Log Issue</button></div></div></div>
+
+<div class="modal-overlay" id="holiday-modal"><div class="modal"><h3>Add Holiday</h3><div class="form-grid"><div class="form-field"><label>Date</label><input type="date" id="hol-date"></div><div class="form-field"><label>Description</label><input type="text" id="hol-desc" placeholder="e.g. Good Friday"></div></div><div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('holiday-modal')">Cancel</button><button class="btn btn-primary" onclick="submitHoliday()">Add</button></div></div></div>
+
+<div class="modal-overlay" id="passcode-modal"><div class="modal" style="width:360px;text-align:center">
+  <div style="font-size:40px;margin-bottom:12px">🔐</div>
+  <h3>Contractor Access</h3>
+  <p style="font-size:11px;color:var(--text3);margin-bottom:20px">Enter the passcode to unlock full editing access including budget, expenses, and project settings.</p>
+  <input type="password" class="passcode-input" id="passcode-input" maxlength="10" placeholder="••••" onkeyup="if(event.key==='Enter')checkPasscode()">
+  <div id="passcode-error" style="color:var(--danger);font-size:11px;margin-top:8px;min-height:16px"></div>
+  <div class="modal-actions" style="justify-content:center"><button class="btn btn-ghost" onclick="closeModal('passcode-modal')">Cancel</button><button class="btn btn-primary" onclick="checkPasscode()">Unlock</button></div>
+</div></div>
+
+<div class="modal-overlay" id="client-passcode-modal"><div class="modal" style="width:360px;text-align:center">
+  <div style="font-size:40px;margin-bottom:12px">💬</div>
+  <h3>Client Access</h3>
+  <p style="font-size:11px;color:var(--text3);margin-bottom:20px">Enter your client passcode to post comments and approvals.</p>
+  <input type="password" class="passcode-input" id="client-passcode-input" maxlength="10" placeholder="••••" onkeyup="if(event.key==='Enter')checkClientPasscode()">
+  <div id="client-passcode-error" style="color:var(--danger);font-size:11px;margin-top:8px;min-height:16px"></div>
+  <div class="modal-actions" style="justify-content:center">
+    <button class="btn btn-ghost" onclick="closeModal('client-passcode-modal')">Cancel</button>
+    <button class="btn btn-primary" onclick="checkClientPasscode()">Unlock Comments</button>
+  </div>
+</div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/3.0.1/chartjs-plugin-annotation.min.js"></script>
+<script>
+"use strict";
+// ============================================================
+// PROJECT SETTINGS
+// ============================================================
+let PROJECT = {
+  startDate: '2026-03-23',
+  workMode: 'construction', // 'office' = Mon-Fri, 'construction' = Mon-Sat
+  totalDays: 45,
+  holidays: [],
+  locked: false,
+  photo: null,
+  description: ''
+};
+
+// Day-to-Date map cache
+let dayDateMap = []; // index 0 = Day 0
+
+function buildDayDateMap() {
+  dayDateMap = [];
+  const start = new Date(PROJECT.startDate + 'T00:00:00');
+  const holSet = new Set(PROJECT.holidays.map(h => h.date));
+  // Day 0 = project start date itself
+  dayDateMap.push({ day: 0, date: PROJECT.startDate, d: new Date(start) });
+  let d = new Date(start);
+  d.setDate(d.getDate() + 1);
+  let count = 0;
+  while(count < PROJECT.totalDays) {
+    const dow = d.getDay();
+    const iso = d.toISOString().split('T')[0];
+    let isWork = false;
+    if(PROJECT.workMode === 'office') isWork = dow >= 1 && dow <= 5;
+    else isWork = dow >= 1 && dow <= 6;
+    if(isWork && !holSet.has(iso)) {
+      count++;
+      dayDateMap.push({ day: count, date: iso, d: new Date(d) });
+    }
+    d.setDate(d.getDate() + 1);
+    if(dayDateMap.length > 500) break;
+  }
+  renderDayMap();
+  document.getElementById('sidebar-dur').textContent = PROJECT.totalDays + ' Working Days';
+  const endDate = dayDateMap.length > 1 ? dayDateMap[dayDateMap.length - 1].date : '';
+  document.getElementById('topbar-date').textContent = 'Start: ' + formatDateShort(PROJECT.startDate) + (endDate ? ' · End: ' + formatDateShort(endDate) : '');
+}
+
+function dayToDate(dayNum) { const e = dayDateMap.find(x => x.day === dayNum); return e ? e.date : ''; }
+function dateToDay(dateStr) {
+  const e = dayDateMap.find(d => d.date === dateStr);
+  return e ? e.day : null;
+}
+function workingDaysBetween(d1, d2) {
+  const i1 = dayDateMap.findIndex(x => x.date >= d1);
+  const i2 = dayDateMap.findIndex(x => x.date >= d2);
+  if(i1 < 0 || i2 < 0) return 0;
+  return Math.abs(i2 - i1) + 1;
+}
+
+function onSettingsChange() {
+  if(PROJECT.locked) return;
+  PROJECT.startDate = document.getElementById('set-start-date').value;
+  PROJECT.workMode = document.getElementById('set-work-mode').value;
+  PROJECT.totalDays = parseInt(document.getElementById('set-total-days').value) || 45;
+  buildDayDateMap();
+  autoSave();
+}
+
+function onTitleChange() {
+  const title = document.getElementById('set-project-title').value || 'Untitled Project';
+  document.getElementById('dash-project-title').textContent = title;
+  const nameEl = document.querySelector('.logo-badge .name');
+  if(nameEl) nameEl.textContent = title.length > 16 ? title.substring(0, 16) + '…' : title;
+  markUnsaved();
+}
+
+function renderDayMap() {
+  const wd = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  document.getElementById('day-map-tbody').innerHTML = dayDateMap.map(d =>
+    `<tr><td>${d.day===0?'Day 0 (Start)':'Day '+d.day}</td><td>${d.date}</td><td>${wd[d.d.getDay()]}</td></tr>`
+  ).join('');
+}
+
+function addHoliday() { document.getElementById('holiday-modal').classList.add('show'); document.getElementById('hol-date').value=''; document.getElementById('hol-desc').value=''; }
+function submitHoliday() {
+  const date = document.getElementById('hol-date').value, desc = document.getElementById('hol-desc').value;
+  if(!date) { alert('Enter date.'); return; }
+  PROJECT.holidays.push({ date, desc: desc || 'Holiday' });
+  closeModal('holiday-modal');
+  renderHolidays();
+  buildDayDateMap();
+  autoSave();
+}
+function deleteHoliday(i) { PROJECT.holidays.splice(i, 1); renderHolidays(); buildDayDateMap(); autoSave(); }
+function renderHolidays() {
+  document.getElementById('holiday-tbody').innerHTML = PROJECT.holidays.length ?
+    PROJECT.holidays.map((h, i) => `<tr><td>${h.date}</td><td>${h.desc}</td><td><span style="cursor:pointer;color:var(--danger)" onclick="deleteHoliday(${i})">✕</span></td></tr>`).join('') :
+    '<tr><td colspan="3" style="text-align:center;color:var(--text3);padding:16px">No holidays set</td></tr>';
+}
+
+function formatDateShort(d) { if(!d) return '–'; return new Date(d+'T00:00:00').toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'}); }
+function fmtS(v) { return '₱' + v.toLocaleString('en', {maximumFractionDigits:0}); }
+function fmt2(v) { return '₱' + Math.abs(v).toLocaleString('en', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+
+// ============================================================
+// DATA
+// ============================================================
+let TOTAL_CONTRACT = 3126515.20;
+const MILESTONES = [
+  {id:1,label:'Downpayment',trigger:'Upon signing',pct:'50%',amount:1563257.60,day:'Day 0',notes:'Before mobilization',color:'#4fc3a1',bg:'rgba(79,195,161,0.1)',bd:'rgba(79,195,161,0.3)',paid:false,paidDate:''},
+  {id:2,label:'1st Progress',trigger:'50% — Day 22',pct:'20%',amount:625303.04,day:'Day 22',notes:'Cumul 70%',color:'#f5c842',bg:'rgba(245,200,66,0.1)',bd:'rgba(245,200,66,0.3)',paid:false,paidDate:''},
+  {id:3,label:'2nd Progress',trigger:'75% — Day 34',pct:'20%',amount:625303.04,day:'Day 34',notes:'Cumul 90%',color:'#e8843a',bg:'rgba(232,132,58,0.1)',bd:'rgba(232,132,58,0.3)',paid:false,paidDate:''},
+  {id:4,label:'Final',trigger:'Day 45',pct:'10%',amount:312651.52,day:'Day 45',notes:'Turnover',color:'#7c6aff',bg:'rgba(124,106,255,0.1)',bd:'rgba(124,106,255,0.3)',paid:false,paidDate:''}
+];
+
+const COST_CODES_SELLING = [
+  {cat:'General Requirements',code:'GR-001',desc:'Mobilization',budget:150000,selling:150000},
+  {cat:'General Requirements',code:'GR-002',desc:'Supervision',budget:250000,selling:250000},
+  {cat:'General Requirements',code:'GR-003',desc:'Temporary Facilities',budget:75000,selling:75000},
+  {cat:'General Requirements',code:'GR-004',desc:'Hauling',budget:50000,selling:50000},
+  {cat:'General Requirements',code:'GR-005',desc:'Demobilization',budget:50000,selling:50000},
+  {cat:'Drywall / Doors & Windows',code:'DW-001',desc:'Gypsum Board on Metal Studs',budget:366795,selling:366795},
+  {cat:'Drywall / Doors & Windows',code:'DW-002',desc:'Fiber Cement Ext. Partition',budget:90610,selling:90610},
+  {cat:'Drywall / Doors & Windows',code:'DW-003',desc:'CHB Zocalo',budget:35750,selling:35750},
+  {cat:'Drywall / Doors & Windows',code:'DW-004',desc:'Plant Box',budget:26910,selling:26910},
+  {cat:'Ceiling Works',code:'CW-001',desc:'Internal Ceiling / Custom',budget:147092,selling:147092},
+  {cat:'Ceiling Works',code:'CW-002',desc:'Plain Ceiling',budget:13229,selling:13229},
+  {cat:'Carpentry Works',code:'CP-001',desc:'Bar Counter w/ Laminate Top',budget:305500,selling:305500},
+  {cat:'Carpentry Works',code:'CP-002',desc:'Curved Cupboards',budget:136500,selling:136500},
+  {cat:'Carpentry Works',code:'CP-003',desc:'Mini Open Shelving',budget:54600,selling:54600},
+  {cat:'Carpentry Works',code:'CP-004',desc:'Brass Wall Finish',budget:175500,selling:175500},
+  {cat:'Carpentry Works',code:'CP-005',desc:'Bench w/ Tables (Interior)',budget:169000,selling:169000},
+  {cat:'Carpentry Works',code:'CP-006',desc:'Bench Exterior w/ Tables',budget:41600,selling:41600},
+  {cat:'Carpentry Works',code:'CP-007',desc:'Open Shelving - Staff Storage',budget:61100,selling:61100},
+  {cat:'Carpentry Works',code:'CP-008',desc:'Office Console',budget:19500,selling:19500},
+  {cat:'Carpentry Works',code:'CP-009',desc:'Cart - Mini Store',budget:39000,selling:39000},
+  {cat:'Floor Finishes',code:'FL-001',desc:'Homogenous Floor Tiles (OSM)',budget:76245,selling:76245},
+  {cat:'Floor Finishes',code:'FL-002',desc:'Waterproofing - Wet Area',budget:60840,selling:60840},
+  {cat:'Floor Finishes',code:'FL-003',desc:'Waterproofing - Dry Area',budget:13260,selling:13260},
+  {cat:'Wall Finishes',code:'WF-001',desc:'Painted Finishes - Kitchen',budget:78390,selling:78390},
+  {cat:'Wall Finishes',code:'WF-002',desc:'Painted Finishes - Office',budget:12870,selling:12870},
+  {cat:'Wall Finishes',code:'WF-003',desc:'Painted Finishes - Bar',budget:10530,selling:10530},
+  {cat:'Wall Finishes',code:'WF-004',desc:'Painted Finishes - Dining',budget:37440,selling:37440},
+  {cat:'Wall Finishes',code:'WF-005',desc:'Painted Finishes - Exterior',budget:32760,selling:32760},
+  {cat:'Wall Finishes',code:'WF-006',desc:'Wall Tiles (OSM)',budget:67405,selling:67405},
+  {cat:'Ceiling Finishes',code:'CF-001',desc:'Painted Finish - Ceiling',budget:45747,selling:45747},
+  {cat:'Drywall / Doors & Windows',code:'DW-101',desc:'Doors',budget:169000,selling:169000},
+  {cat:'Drywall / Doors & Windows',code:'DW-102',desc:'Windows, Glass & Glazing',budget:75972,selling:75972},
+  {cat:'Plumbing Works',code:'PL-001',desc:'Sanitary Line & Fixtures',budget:71760,selling:71760},
+  {cat:'Electrical Works',code:'EL-001',desc:'Lighting & Power Fixtures',budget:116610,selling:116610},
+  // MANPOWER — internal cost only, selling = 0, budget starts blank for user input
+  {cat:'Manpower / Labor',code:'MP-001',desc:'Skilled Workers (Carpenters)',budget:0,selling:0},
+  {cat:'Manpower / Labor',code:'MP-002',desc:'Skilled Workers (Masons/Tilers)',budget:0,selling:0},
+  {cat:'Manpower / Labor',code:'MP-003',desc:'Skilled Workers (Painters)',budget:0,selling:0},
+  {cat:'Manpower / Labor',code:'MP-004',desc:'Skilled Workers (Electrician)',budget:0,selling:0},
+  {cat:'Manpower / Labor',code:'MP-005',desc:'Skilled Workers (Plumber)',budget:0,selling:0},
+  {cat:'Manpower / Labor',code:'MP-006',desc:'General Laborers',budget:0,selling:0},
+  {cat:'Manpower / Labor',code:'MP-007',desc:'Helper / Utility',budget:0,selling:0},
+];
+
+const COST_CODES_BUDGET = [
+  {code:'GR-001',budget:0},{code:'GR-002',budget:0},{code:'GR-003',budget:0},{code:'GR-004',budget:0},{code:'GR-005',budget:0},
+  {code:'DW-001',budget:0},{code:'DW-002',budget:0},{code:'DW-003',budget:0},{code:'DW-004',budget:0},
+  {code:'CW-001',budget:0},{code:'CW-002',budget:0},
+  {code:'CP-001',budget:0},{code:'CP-002',budget:0},{code:'CP-003',budget:0},{code:'CP-004',budget:0},{code:'CP-005',budget:0},{code:'CP-006',budget:0},{code:'CP-007',budget:0},{code:'CP-008',budget:0},{code:'CP-009',budget:0},
+  {code:'FL-001',budget:0},{code:'FL-002',budget:0},{code:'FL-003',budget:0},
+  {code:'WF-001',budget:0},{code:'WF-002',budget:0},{code:'WF-003',budget:0},{code:'WF-004',budget:0},{code:'WF-005',budget:0},{code:'WF-006',budget:0},
+  {code:'CF-001',budget:0},{code:'DW-101',budget:0},{code:'DW-102',budget:0},
+  {code:'PL-001',budget:0},{code:'EL-001',budget:0},
+  {code:'MP-001',budget:0},{code:'MP-002',budget:0},{code:'MP-003',budget:0},{code:'MP-004',budget:0},{code:'MP-005',budget:0},{code:'MP-006',budget:0},{code:'MP-007',budget:0},
+];
+
+const SCURVE_PLANNED = [
+  {day:1,cPct:1.83},{day:2,cPct:3.66},{day:3,cPct:5.49},{day:4,cPct:5.72},{day:5,cPct:5.95},
+  {day:6,cPct:8.30},{day:7,cPct:10.64},{day:8,cPct:13.15},{day:9,cPct:15.67},{day:10,cPct:18.18},
+  {day:11,cPct:20.70},{day:12,cPct:23.22},{day:13,cPct:25.92},{day:14,cPct:28.62},{day:15,cPct:31.32},
+  {day:16,cPct:33.48},{day:17,cPct:35.72},{day:18,cPct:37.96},{day:19,cPct:40.20},{day:20,cPct:41.25},
+  {day:21,cPct:42.29},{day:22,cPct:43.26},{day:23,cPct:46.85},{day:24,cPct:50.44},{day:25,cPct:54.18},
+  {day:26,cPct:57.52},{day:27,cPct:60.86},{day:28,cPct:65.60},{day:29,cPct:69.44},{day:30,cPct:74.65},
+  {day:31,cPct:79.86},{day:32,cPct:84.83},{day:33,cPct:88.34},{day:34,cPct:89.62},{day:35,cPct:90.91},
+  {day:36,cPct:92.19},{day:37,cPct:93.27},{day:38,cPct:94.34},{day:39,cPct:95.42},{day:40,cPct:95.65},
+  {day:41,cPct:95.88},{day:42,cPct:96.11},{day:43,cPct:96.87},{day:44,cPct:98.44},{day:45,cPct:100.00},
+];
+
+// Schedule tasks — sections have costCat = exact CONTRACT_CATEGORIES name
+const SCHEDULE = [
+  {section:'General Requirements', costCat:'General Requirements'},
+  {id:'t1',name:'Permits & Licenses',note:'By Owner',targetStartDay:0,targetEndDay:0,actualStartDate:null,pctComplete:100,done:true,costCodes:[]},
+  {id:'t2',name:'Mobilization',targetStartDay:0,targetEndDay:3,actualStartDate:null,pctComplete:0,costCodes:['GR-001']},
+  {id:'t3',name:'Supervision',targetStartDay:0,targetEndDay:45,actualStartDate:null,pctComplete:0,costCodes:['GR-002']},
+  {id:'t4',name:'Temporary Facilities',targetStartDay:0,targetEndDay:45,actualStartDate:null,pctComplete:0,costCodes:['GR-003']},
+  {id:'t5',name:'Hauling',targetStartDay:43,targetEndDay:45,actualStartDate:null,pctComplete:0,costCodes:['GR-004']},
+  {id:'t6',name:'Demobilization',targetStartDay:44,targetEndDay:45,actualStartDate:null,pctComplete:0,costCodes:['GR-005']},
+  {section:'Drywall / Doors & Windows', costCat:'Drywall / Doors & Windows'},
+  {id:'t7',name:'Gypsum Board on Metal Studs',targetStartDay:6,targetEndDay:19,actualStartDate:null,pctComplete:0,costCodes:['DW-001']},
+  {id:'t8',name:'Fiber Cement Ext. Partition',targetStartDay:6,targetEndDay:15,actualStartDate:null,pctComplete:0,costCodes:['DW-002']},
+  {id:'t9',name:'CHB Zocalo',targetStartDay:6,targetEndDay:12,actualStartDate:null,pctComplete:0,costCodes:['DW-003']},
+  {id:'t10',name:'Plant Box',targetStartDay:8,targetEndDay:12,actualStartDate:null,pctComplete:0,costCodes:['DW-004']},
+  {id:'t26',name:'Doors',targetStartDay:30,targetEndDay:34,actualStartDate:null,pctComplete:0,costCodes:['DW-101']},
+  {id:'t27',name:'Windows, Glass & Glazing',targetStartDay:30,targetEndDay:34,actualStartDate:null,pctComplete:0,costCodes:['DW-102']},
+  {section:'Ceiling Works', costCat:'Ceiling Works'},
+  {id:'t11',name:'Internal Ceiling / Custom',targetStartDay:6,targetEndDay:15,actualStartDate:null,pctComplete:0,costCodes:['CW-001']},
+  {id:'t12',name:'Plain Ceiling',targetStartDay:20,targetEndDay:24,actualStartDate:null,pctComplete:0,costCodes:['CW-002']},
+  {section:'Carpentry Works', costCat:'Carpentry Works'},
+  {id:'t13',name:'Bar Counter w/ Laminate Top',targetStartDay:23,targetEndDay:28,actualStartDate:null,pctComplete:0,costCodes:['CP-001']},
+  {id:'t14',name:'Curved Cupboards',targetStartDay:23,targetEndDay:27,actualStartDate:null,pctComplete:0,costCodes:['CP-002']},
+  {id:'t15',name:'Mini Open Shelving',targetStartDay:28,targetEndDay:31,actualStartDate:null,pctComplete:0,costCodes:['CP-003']},
+  {id:'t16',name:'Brass Wall Finish',targetStartDay:28,targetEndDay:33,actualStartDate:null,pctComplete:0,costCodes:['CP-004']},
+  {id:'t17',name:'Bench w/ Tables (Interior)',targetStartDay:28,targetEndDay:33,actualStartDate:null,pctComplete:0,costCodes:['CP-005']},
+  {id:'t18',name:'Bench Exterior w/ Tables',targetStartDay:29,targetEndDay:32,actualStartDate:null,pctComplete:0,costCodes:['CP-006']},
+  {id:'t19',name:'Open Shelving - Staff Storage',targetStartDay:29,targetEndDay:33,actualStartDate:null,pctComplete:0,costCodes:['CP-007']},
+  {id:'t19b',name:'Office Console',targetStartDay:29,targetEndDay:33,actualStartDate:null,pctComplete:0,costCodes:['CP-008']},
+  {id:'t19c',name:'Cart - Mini Store',targetStartDay:29,targetEndDay:33,actualStartDate:null,pctComplete:0,costCodes:['CP-009']},
+  {section:'Floor Finishes', costCat:'Floor Finishes'},
+  {id:'t20',name:'Homogenous Floor Tiles (OSM)',targetStartDay:20,targetEndDay:26,actualStartDate:null,pctComplete:0,costCodes:['FL-001']},
+  {id:'t21',name:'Waterproofing - Wet Area',targetStartDay:15,targetEndDay:19,actualStartDate:null,pctComplete:0,costCodes:['FL-002']},
+  {id:'t22',name:'Waterproofing - Dry Area',targetStartDay:15,targetEndDay:17,actualStartDate:null,pctComplete:0,costCodes:['FL-003']},
+  {section:'Wall Finishes', costCat:'Wall Finishes'},
+  {id:'t23',name:'Painted Finishes - Kitchen',targetStartDay:30,targetEndDay:39,actualStartDate:null,pctComplete:0,costCodes:['WF-001']},
+  {id:'t23b',name:'Painted Finishes - Office',targetStartDay:30,targetEndDay:39,actualStartDate:null,pctComplete:0,costCodes:['WF-002']},
+  {id:'t23c',name:'Painted Finishes - Bar',targetStartDay:30,targetEndDay:39,actualStartDate:null,pctComplete:0,costCodes:['WF-003']},
+  {id:'t23d',name:'Painted Finishes - Dining',targetStartDay:30,targetEndDay:39,actualStartDate:null,pctComplete:0,costCodes:['WF-004']},
+  {id:'t23e',name:'Painted Finishes - Exterior',targetStartDay:30,targetEndDay:39,actualStartDate:null,pctComplete:0,costCodes:['WF-005']},
+  {id:'t24',name:'Wall Tiles (OSM)',targetStartDay:20,targetEndDay:24,actualStartDate:null,pctComplete:0,costCodes:['WF-006']},
+  {section:'Ceiling Finishes', costCat:'Ceiling Finishes'},
+  {id:'t25',name:'Painted Finish - Ceiling',targetStartDay:35,targetEndDay:39,actualStartDate:null,pctComplete:0,costCodes:['CF-001']},
+  {section:'Plumbing Works', costCat:'Plumbing Works'},
+  {id:'t28',name:'Sanitary Line & Fixtures',targetStartDay:15,targetEndDay:21,actualStartDate:null,pctComplete:0,costCodes:['PL-001']},
+  {section:'Electrical Works', costCat:'Electrical Works'},
+  {id:'t29',name:'Lighting & Power Fixtures',targetStartDay:35,targetEndDay:41,actualStartDate:null,pctComplete:0,costCodes:['EL-001']},
+];
+
+let expenses = [];
+let budgetLocked = false, scheduleLocked = false;
+let variationOrders = [], challenges = [];
+let scopeCollapsed = {};
+
+// Find the SCHEDULE index of the section that matches a contract category name
+function findScheduleSectionIdx(catName){
+  // 1. Exact costCat match (preferred — works with new structure)
+  let idx=SCHEDULE.findIndex(t=>t.section&&t.costCat===catName);
+  if(idx>=0) return idx;
+  // 2. Exact section name match (fallback for user-added cats)
+  idx=SCHEDULE.findIndex(t=>t.section&&t.section===catName);
+  if(idx>=0) return idx;
+  // 3. Fuzzy word match (last resort)
+  const words=catName.toLowerCase().split(/\s+/).filter(w=>w.length>3);
+  idx=SCHEDULE.findIndex(t=>{
+    if(!t.section) return false;
+    const sec=(t.costCat||t.section).toLowerCase();
+    return words.some(w=>sec.includes(w));
+  });
+  return idx;
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+function getActualByCode(c){return expenses.filter(e=>e.code===c).reduce((s,e)=>s+parseFloat(e.amount||0),0);}
+function getTotalActual(){return expenses.reduce((s,e)=>s+parseFloat(e.amount||0),0);}
+function isInternalOnly(c){return c.cat==='Manpower / Labor' || c.internalOnly===true;}
+function getTotalSelling(){return COST_CODES_SELLING.filter(c=>!isInternalOnly(c)).reduce((s,c)=>s+(c.selling||0),0);}
+function getTotalAllBudget(){return COST_CODES_SELLING.reduce((s,c)=>s+c.budget,0);}
+function getTotalContractBudget(){return COST_CODES_SELLING.filter(c=>!isInternalOnly(c)).reduce((s,c)=>s+c.budget,0);}
+function getTotalBudget(){return COST_CODES_BUDGET.reduce((s,c)=>s+c.budget,0);}
+function getTotalManpower(){return COST_CODES_SELLING.filter(c=>isInternalOnly(c)).reduce((s,c)=>s+c.budget,0);}
+function closeModal(id){document.getElementById(id).classList.remove('show');}
+function getDur(t){return Math.max(1, t.targetEndDay - t.targetStartDay + 1);}
+
+// Budget-weighted project progress
+function getProjectProgress(){
+  const tasks=SCHEDULE.filter(t=>!t.section);
+  let totalWeight=0, weightedPct=0;
+  tasks.forEach(t=>{
+    // Find matching cost code budget as weight
+    const cc=COST_CODES_SELLING.find(c=>c.desc&&t.name&&(c.desc.toLowerCase().includes(t.name.split(' ')[0].toLowerCase())||t.name.toLowerCase().includes(c.desc.split(' ')[0].toLowerCase())));
+    const weight=cc?cc.budget:1;
+    totalWeight+=weight;
+    weightedPct+=weight*t.pctComplete;
+  });
+  return totalWeight>0?(weightedPct/totalWeight):0;
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function showPage(id,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  const t={settings:'Settings',dashboard:'Dashboard',gantt:'Gantt Chart & Progress',contract:'Contract Setup',budget:'Budget Monitoring',payments:'Payments',cashflow:'Cash Flow',expenses:'Expenses',compare:'Budget vs Selling'};
+  document.getElementById('pageTitle').textContent=t[id]||id;
+  if(el) el.classList.add('active');
+  if(id==='gantt') { buildGantt(); buildSCurve(); }
+  if(id==='contract') buildContract();
+  if(id==='budget') buildBVC();
+  if(id==='compare') buildCompare();
+  if(id==='expenses') buildExpenseList();
+  if(id==='payments') buildPayments();
+  if(id==='cashflow'){updateCashFlow();buildCashFlowLog();}
+  if(id==='dashboard') buildDashboard();
+  if(id==='settings'){renderHolidays();buildDayDateMap();}
+}
+
+// ============================================================
+// GANTT — DATE-BASED
+// ============================================================
+function buildGantt(){
+  const thead=document.getElementById('gantt-thead');
+  const tbody=document.getElementById('gantt-tbody');
+  const TD=PROJECT.totalDays;
+  const colors=['#f5c842','#4fc3a1','#e8843a','#7c6aff','#e879a0','#6aafe8','#a8e86a','#e8d26a','#c490e8'];
+  let ci=0;
+
+  // Calculate project progress (budget-weighted)
+  const projPct = getProjectProgress();
+  document.getElementById('gantt-progress-badge').textContent = projPct.toFixed(1) + '% complete';
+
+  // Header row 1
+  let h1='<tr><th class="task-col">Task</th>';
+  if(!scheduleLocked) h1+='<th>Start</th><th>End</th><th>Days</th>';
+  else h1+='<th>Baseline</th><th>Actual Start</th><th>% Done</th>';
+  // Date headers - show dates for key days
+  for(let d=0;d<=TD;d++){
+    const dt=dayToDate(d);
+    const dateObj=dt?new Date(dt+'T00:00:00'):null;
+    const showDate=d===0||d===TD||(d%5===0);
+    h1+=`<th style="min-width:16px;font-size:7px;padding:4px 1px;white-space:nowrap">${showDate&&dateObj?dateObj.toLocaleDateString('en',{month:'short',day:'numeric'}):''}</th>`;
+  }
+  h1+='</tr><tr><th></th><th></th><th></th><th></th>';
+  for(let d=0;d<=TD;d++) h1+=`<th style="min-width:16px;font-size:8px">${d}</th>`;
+  h1+='</tr>';
+  thead.innerHTML=h1;
+
+  // Body
+  let rows='';
+  for(const t of SCHEDULE){
+    if(t.section){rows+=`<tr class="gantt-section-row"><td colspan="${4+TD+1}">${t.section}</td></tr>`;ci=(ci+1)%colors.length;continue;}
+    const dur=getDur(t);
+    const startDate=dayToDate(t.targetStartDay);
+    const endDate=dayToDate(t.targetEndDay);
+
+    rows+='<tr><td style="font-size:11px">'+t.name+(t.note?'<br><span style="font-size:9px;color:var(--text3)">'+t.note+'</span>':'')+'</td>';
+
+    if(!scheduleLocked){
+      rows+=`<td><input class="gantt-date-input" type="date" value="${startDate}" onchange="onGanttDateChange('${t.id}','start',this.value)"></td>`;
+      rows+=`<td><input class="gantt-date-input" type="date" value="${endDate}" onchange="onGanttDateChange('${t.id}','end',this.value)"></td>`;
+      rows+=`<td style="text-align:center;font-size:10px;color:var(--text2)">${dur}d</td>`;
+    } else {
+      rows+=`<td style="font-size:10px;color:var(--text3)">${formatDateShort(startDate)} → ${formatDateShort(endDate)} (${dur}d)</td>`;
+      rows+=`<td><input class="gantt-date-input" type="date" value="${t.actualStartDate||''}" placeholder="—" onchange="onGanttActual('${t.id}',this.value)"></td>`;
+      rows+=`<td><div style="display:flex;align-items:center;gap:4px"><input class="gantt-pct-input" type="number" min="0" max="100" value="${t.pctComplete}" onchange="onGanttPct('${t.id}',this.value)"><span style="font-size:9px;color:var(--text3)">%</span></div></td>`;
+    }
+
+    // Day cells (0 to TD)
+    for(let d=0;d<=TD;d++){
+      let content='';
+      const inBase = d>=t.targetStartDay && d<=t.targetEndDay;
+      if(t.done && d===0) content=`<div class="gantt-bar" style="background:var(--accent3);height:14px;width:14px"></div>`;
+      else if(!t.done){
+        if(scheduleLocked && t.actualStartDate){
+          const actDay=dateToDay(t.actualStartDate);
+          if(actDay!==null){
+            const actEnd=actDay+dur-1;
+            const progEnd=actDay+Math.floor(dur*t.pctComplete/100)-1;
+            const inAct=d>=actDay&&d<=actEnd;
+            const inProg=d>=actDay&&d<=progEnd;
+            if(inBase && inAct) content=inProg?`<div class="gantt-bar" style="background:${colors[ci]};height:14px"></div>`:`<div class="gantt-bar" style="background:${colors[ci]};opacity:0.25;height:14px"></div>`;
+            else if(inBase) content=`<div class="gantt-bar" style="background:${colors[ci]};opacity:0.15;height:7px;margin-top:4px"></div>`;
+            else if(inAct) content=inProg?`<div class="gantt-bar" style="background:${colors[ci]};height:7px;border:1px solid rgba(255,255,255,0.3)"></div>`:`<div class="gantt-bar" style="background:${colors[ci]};opacity:0.15;height:7px"></div>`;
+          } else if(inBase) content=`<div class="gantt-bar" style="background:${colors[ci]};opacity:0.3;height:14px"></div>`;
+        } else if(inBase) content=`<div class="gantt-bar" style="background:${colors[ci]};height:14px"></div>`;
+      }
+      // Today marker
+      const todayDay=getCurrentDay();
+      if(d===todayDay && scheduleLocked) content+=`<div style="position:absolute;top:0;bottom:0;width:2px;background:#29b6f6;z-index:5;left:50%"></div>`;
+      rows+=`<td class="day-cell" style="position:relative">${content}</td>`;
+    }
+    rows+='</tr>';
+  }
+  tbody.innerHTML=rows;
+  updateScheduleLockUI();
+}
+
+function onGanttDateChange(id,field,val){
+  const t=SCHEDULE.find(x=>x.id===id);if(!t)return;
+  const day=dateToDay(val);
+  if(day===null){alert('Date is not a working day in this project.');return;}
+  if(field==='start'){t.targetStartDay=day;if(t.targetEndDay<day)t.targetEndDay=day;}
+  else{t.targetEndDay=day;if(t.targetStartDay>day)t.targetStartDay=day;}
+  buildGantt();autoSave();
+}
+function onGanttActual(id,val){const t=SCHEDULE.find(x=>x.id===id);if(t)t.actualStartDate=val||null;buildGantt();autoSave();}
+function onGanttPct(id,val){const t=SCHEDULE.find(x=>x.id===id);if(t)t.pctComplete=Math.min(100,Math.max(0,parseInt(val)||0));buildGantt();autoSave();}
+
+function toggleScheduleLock(){
+  if(!scheduleLocked){
+    if(!contractLocked){alert('⚠ Lock the Contract first (in the Contract tab) before locking the Gantt baseline.\n\nThe contract line items define the scope of work for the schedule.');return;}
+    if(!confirm('Lock schedule as baseline? Target dates become fixed. Working day mode will also be locked.'))return;
+    scheduleLocked=true; PROJECT.locked=true;
+    document.getElementById('set-start-date').disabled=true;
+    document.getElementById('set-work-mode').disabled=true;
+    document.getElementById('set-total-days').disabled=true;
+  } else {
+    if(!confirm('Unlock schedule? This allows editing target dates.'))return;
+    scheduleLocked=false; PROJECT.locked=false;
+    document.getElementById('set-start-date').disabled=false;
+    document.getElementById('set-work-mode').disabled=false;
+    document.getElementById('set-total-days').disabled=false;
+  }
+  buildGantt();autoSave();
+}
+function updateScheduleLockUI(){
+  const i=document.getElementById('gantt-lock-icon'),l=document.getElementById('gantt-lock-label'),b=document.getElementById('gantt-lock-btn');
+  if(scheduleLocked){i.textContent='🔒';l.innerHTML='<span class="locked-text">BASELINE LOCKED — enter Actual Start & % Complete per task</span>';b.textContent='🔓 Unlock';b.className='btn btn-success';}
+  else{i.textContent='🔓';l.innerHTML='<span class="unlocked-text">UNLOCKED — set target start/end dates (as calendar dates)</span>';b.textContent='🔒 Lock Baseline';b.className='btn btn-danger';}
+}
+
+// ============================================================
+// S-CURVE WITH CHALLENGES + PROJECTION
+// ============================================================
+let scurveChart=null;
+function buildSCurve(){
+  if(scurveChart){scurveChart.destroy();scurveChart=null;}
+  const TD=PROJECT.totalDays;
+  const labels=Array.from({length:TD+1},(_,i)=>'D'+i);
+  // Planned curve (prepend Day 0 = 0%)
+  const planned=[0,...SCURVE_PLANNED.slice(0,TD).map(d=>d.cPct)];
+
+  // Actual cost progress
+  const totalBudget=getTotalAllBudget();
+  const actualCostByDay=new Array(TD+1).fill(null);
+  for(let d=0;d<=TD;d++){
+    const dateStr=dayToDate(d);
+    if(!dateStr) continue;
+    const dayExp=expenses.filter(e=>e.date<=dateStr).reduce((s,e)=>s+parseFloat(e.amount||0),0);
+    if(dayExp>0 || d<=getCurrentDay()) actualCostByDay[d]=totalBudget>0?(dayExp/totalBudget*100):0;
+  }
+
+  // Actual schedule progress (budget-weighted)
+  // Actual schedule progress — per-day interpolation from actual start dates
+  const actualSchedByDay=new Array(TD+1).fill(null);
+  if(scheduleLocked){
+    const curDayS=getCurrentDay();
+    const sellTasks=SCHEDULE.filter(t=>!t.section&&t.pctComplete>0);
+    const totalSell=COST_CODES_SELLING.filter(c=>!isInternalOnly(c)).reduce((s,c)=>s+(c.selling||0),0)||1;
+    for(let d=0;d<=curDayS;d++){
+      let weightedPct=0, totalWeight=0;
+      for(const t of SCHEDULE.filter(x=>!x.section)){
+        const cc=COST_CODES_SELLING.find(c=>!isInternalOnly(c)&&c.desc&&t.name&&(c.desc.toLowerCase()===t.name.toLowerCase()||c.desc.toLowerCase().includes(t.name.split(' ')[0].toLowerCase())||t.name.toLowerCase().includes(c.desc.split(' ')[0].toLowerCase())));
+        const w=cc?(cc.selling||1):1;
+        totalWeight+=w;
+        const startDay=t.actualStartDate?dateToDay(t.actualStartDate):null;
+        if(startDay!==null&&startDay<=d){
+          // Linearly interpolate: at actualStartDay=0%, at curDay=pctComplete%
+          const span=curDayS-startDay;
+          const taskPctAtD=span>0?Math.min(t.pctComplete,(t.pctComplete/span*(d-startDay))):t.pctComplete;
+          weightedPct+=w*taskPctAtD;
+        } else if(startDay===null&&t.pctComplete>0&&t.targetStartDay<=d){
+          // No actual date but has progress — use target start day
+          const span=curDayS-t.targetStartDay;
+          const taskPctAtD=span>0?Math.min(t.pctComplete,(t.pctComplete/span*(d-t.targetStartDay))):t.pctComplete;
+          weightedPct+=w*taskPctAtD;
+        }
+      }
+      actualSchedByDay[d]=totalWeight>0?(weightedPct/totalWeight):0;
+    }
+  }
+
+  // Challenge annotations
+  const annotations={};
+  challenges.forEach((ch,i)=>{
+    const chDay=dateToDay(ch.date);
+    if(chDay!==null && chDay<=TD){
+      const sevColor={low:'#f5c842',medium:'#e8843a',high:'#e85555',critical:'#ff2222'};
+      annotations['ch'+i]={
+        type:'point', xValue:'D'+chDay, yValue:actualCostByDay[chDay]||planned[chDay]||0,
+        backgroundColor:sevColor[ch.severity]||'#e85555', borderColor:'#000', borderWidth:2, radius:6,
+        label:{ display:true, content:ch.title, position:'end', backgroundColor:'rgba(0,0,0,0.8)', color:'#fff', font:{size:9}, padding:3 }
+      };
+    }
+  });
+
+  // Today line
+  const curDay=getCurrentDay();
+  if(curDay>0 && curDay<=TD){
+    annotations['today']={
+      type:'line', xMin:'D'+curDay, xMax:'D'+curDay,
+      borderColor:'#29b6f6', borderWidth:2, borderDash:[4,2],
+      label:{ display:true, content:'Today (D'+curDay+')', position:'start', backgroundColor:'#29b6f6', color:'#000', font:{size:9,weight:'bold'}, padding:3 }
+    };
+  }
+
+  const ctx=document.getElementById('scurve-chart').getContext('2d');
+  scurveChart=new Chart(ctx,{
+    type:'line',
+    data:{
+      labels,
+      datasets:[
+        {label:'Planned',data:planned,borderColor:'#f5c842',backgroundColor:'rgba(245,200,66,0.05)',borderWidth:2,pointRadius:0,fill:true,tension:0.4},
+        {label:'Actual (Cost)',data:actualCostByDay,borderColor:'#4fc3a1',borderWidth:2.5,pointRadius:2,pointBackgroundColor:'#4fc3a1',fill:false,tension:0.3,spanGaps:true},
+        {label:'Actual (Schedule)',data:actualSchedByDay,borderColor:'#7c6aff',borderWidth:2,pointRadius:1,borderDash:[5,3],fill:false,tension:0.3,spanGaps:true},
+      ]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        annotation:{annotations}
+      },
+      scales:{
+        x:{ticks:{color:'#5a6278',font:{size:9},maxTicksLimit:16},grid:{color:'#1a1e28'}},
+        y:{min:0,max:100,position:'right',ticks:{color:'#5a6278',font:{size:10},callback:v=>v+'%'},grid:{color:'#1a1e28'}}
+      }
+    }
+  });
+
+  buildProjection(actualCostByDay, actualSchedByDay, planned);
+  buildChallengeList();
+}
+
+function getCurrentDay(){
+  const today=new Date().toISOString().split('T')[0];
+  const d=dateToDay(today);
+  if(d!==null) return d;
+  // If today is past the project end, return totalDays; if before start, return 0
+  if(today<PROJECT.startDate) return 0;
+  return PROJECT.totalDays;
+}
+
+function buildProjection(costData, schedData, planned){
+  const el=document.getElementById('scurve-projection');
+  const curDay=getCurrentDay();
+  if(!scheduleLocked || curDay<1){el.innerHTML='Lock schedule and log progress to see projections.';return;}
+
+  const costPct=costData[curDay]||0;
+  const schedPct=schedData[curDay]||0;
+  const plannedPct=planned[curDay]||0;
+  const costVar=(costPct-plannedPct).toFixed(1);
+  const schedVar=(schedPct-plannedPct).toFixed(1);
+
+  // Extrapolate end date — use recent rate (last 5 days) for better accuracy
+  let projEndDay=PROJECT.totalDays;
+  if(schedPct>0&&curDay>0){
+    const lookback=Math.min(5,curDay);
+    const pastPct=schedData[curDay-lookback]||0;
+    const recentRate=(schedPct-pastPct)/lookback;
+    const overallRate=schedPct/curDay;
+    const useRate=recentRate>0.05?recentRate:overallRate;
+    const remaining=100-schedPct;
+    const daysNeeded=useRate>0?Math.ceil(remaining/useRate):PROJECT.totalDays-curDay;
+    projEndDay=curDay+daysNeeded;
+  }
+
+  // Always compute a real calendar date — even if projEndDay > totalDays
+  // by walking forward from the last known date using working day rules
+  function getCalendarDateForDay(targetDay){
+    if(targetDay<=PROJECT.totalDays){
+      return dayToDate(targetDay)||null;
+    }
+    // Beyond project end — extend working days from last known date
+    const lastKnown=dayDateMap[dayDateMap.length-1];
+    if(!lastKnown) return null;
+    let d=new Date(lastKnown.d);
+    let extra=targetDay-PROJECT.totalDays;
+    while(extra>0){
+      d.setDate(d.getDate()+1);
+      const dow=d.getDay();
+      const iso=d.toISOString().split('T')[0];
+      const isWork=PROJECT.workMode==='office'?(dow>=1&&dow<=5):(dow>=1&&dow<=6);
+      const isHol=PROJECT.holidays.some(h=>h.date===iso);
+      if(isWork&&!isHol) extra--;
+    }
+    return d.toISOString().split('T')[0];
+  }
+
+  const projEndDate=getCalendarDateForDay(projEndDay);
+  const origEndDate=dayToDate(PROJECT.totalDays);
+  const diff=projEndDay-PROJECT.totalDays;
+  const diffLabel=diff>0?`<span class="neg">${diff} working days DELAYED</span>`:diff<0?`<span class="pos">${Math.abs(diff)} working days AHEAD</span>`:'<span class="pos">ON SCHEDULE</span>';
+
+  el.innerHTML=`
+    <div style="margin-bottom:12px"><strong>Day ${curDay} of ${PROJECT.totalDays}</strong></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:11px">
+      <div>Cost Progress: <strong>${costPct.toFixed(1)}%</strong></div>
+      <div>vs Planned: <span class="${parseFloat(costVar)>=0?'pos':'neg'}">${costVar}%</span></div>
+      <div>Schedule Progress: <strong>${schedPct.toFixed(1)}%</strong></div>
+      <div>vs Planned: <span class="${parseFloat(schedVar)>=0?'pos':'neg'}">${schedVar}%</span></div>
+    </div>
+    <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+      <div style="font-size:11px">Projected End: <strong>${formatDateShort(projEndDate)||'—'}</strong>${diff>0?' (Day '+projEndDay+' — '+diff+' days over)':diff<0?' (Day '+projEndDay+')':' (Day '+PROJECT.totalDays+')'}</div>
+      <div style="font-size:11px;margin-top:4px">Original End: ${formatDateShort(origEndDate)} (Day ${PROJECT.totalDays})</div>
+      <div style="font-size:13px;margin-top:8px;font-weight:600">${diffLabel}</div>
+    </div>`;
+}
+
+// Challenges
+function openChallengeModal(){document.getElementById('challenge-modal').classList.add('show');document.getElementById('ch-date').value=new Date().toISOString().split('T')[0];document.getElementById('ch-title').value='';document.getElementById('ch-desc').value='';}
+function submitChallenge(){
+  const date=document.getElementById('ch-date').value,sev=document.getElementById('ch-severity').value,title=document.getElementById('ch-title').value,desc=document.getElementById('ch-desc').value;
+  if(!date||!title){alert('Enter date and title.');return;}
+  challenges.push({date,severity:sev,title,desc});
+  closeModal('challenge-modal');
+  buildSCurve();
+  autoSave();
+}
+function deleteChallenge(i){challenges.splice(i,1);buildSCurve();autoSave();}
+function buildChallengeList(){
+  const el=document.getElementById('challenge-list');
+  if(!challenges.length){el.innerHTML='<div style="color:var(--text3);text-align:center;padding:16px">No issues logged</div>';return;}
+  const sevColor={low:'var(--accent)',medium:'var(--accent2)',high:'var(--danger)',critical:'#ff2222'};
+  el.innerHTML=challenges.map((c,i)=>`<div class="challenge-item"><div class="challenge-dot" style="background:${sevColor[c.severity]}"></div><div class="challenge-info"><div class="ch-date">${formatDateShort(c.date)} · <span style="color:${sevColor[c.severity]};text-transform:uppercase;font-weight:600">${c.severity}</span></div><div class="ch-title">${c.title}</div>${c.desc?'<div class="ch-desc">'+c.desc+'</div>':''}</div><span style="cursor:pointer;color:var(--danger);flex-shrink:0" onclick="deleteChallenge(${i})">✕</span></div>`).join('');
+}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+function buildDashboard(){
+  const bt=getTotalSelling(), contractBudget=getTotalContractBudget(), mpBudget=getTotalManpower(), totalBudget=contractBudget+mpBudget;
+  const tot=getTotalActual(), income=bt-totalBudget, marginPct=bt>0?((income/bt)*100).toFixed(1):'0';
+  const tasks=SCHEDULE.filter(t=>!t.section);
+  const projPct=getProjectProgress();
+  const done=tasks.filter(t=>t.pctComplete>=100).length, active=tasks.filter(t=>t.pctComplete>0&&t.pctComplete<100).length, pending=tasks.length-done-active;
+  const col=MILESTONES.filter(m=>m.paid).reduce((s,m)=>s+m.amount,0);
+
+  // KPIs
+  // Contract value — show locked value vs draft clearly
+  const displayVal = getTotalSelling();
+  document.getElementById('dash-contract').textContent = displayVal > 0 ? '₱'+(displayVal/1e6).toFixed(2)+'M' : '—';
+  document.getElementById('dash-contract').style.color = contractLocked ? 'var(--accent)' : 'var(--accent2)';
+  document.getElementById('dash-contract-sub').innerHTML = contractLocked
+    ? `${fmtS(displayVal)} · VAT Excl. <span style="color:var(--accent3);margin-left:4px">🔒 Locked</span>`
+    : `${displayVal>0?fmtS(displayVal)+' ·':''} <span style="color:var(--accent2)">⚠ Contract not yet locked</span>`;
+  document.getElementById('kpi-progress-main').textContent=projPct.toFixed(1)+'%';
+  document.getElementById('kpi-progress-sub').textContent=done+' done, '+active+' active of '+tasks.length;
+  document.getElementById('kpi-actual').textContent=fmtS(tot);
+  document.getElementById('kpi-actual-pct').textContent=totalBudget>0?((tot/totalBudget)*100).toFixed(1)+'% of budget':'—';
+  document.getElementById('kpi-income').textContent=(income>=0?'':'−')+fmtS(Math.abs(income));
+  document.getElementById('kpi-income').className='kpi-value '+(income>=0?'pos':'neg');
+  document.getElementById('kpi-income-sub').textContent=marginPct+'% margin';
+
+  // Photo and description
+  const bannerImg = document.getElementById('dash-banner-img');
+  const descEl = document.getElementById('dash-project-desc');
+  if(bannerImg){
+    if(PROJECT.photo){
+      bannerImg.style.backgroundImage = 'url(' + PROJECT.photo + ')';
+      bannerImg.style.display = 'block';
+    } else {
+      bannerImg.style.display = 'none';
+    }
+  }
+  if(descEl){
+    if(PROJECT.description && PROJECT.description.trim()){
+      descEl.textContent = PROJECT.description;
+      descEl.style.display = 'block';
+    } else {
+      descEl.style.display = 'none';
+    }
+  }
+
+  // Contractor donuts (safe null-check)
+  if(document.getElementById('dash-donut-budget')) buildDonut('dash-donut-budget','dash-budget-legend',[contractBudget,mpBudget,Math.max(0,bt-contractBudget)],['#f5c842','#7c6aff','#252a38'],['Contract Budget','Labor Budget','Unallocated']);
+  if(document.getElementById('dash-donut-cash')) buildDonut('dash-donut-cash','dash-cash-legend',[col,tot,Math.max(0,bt-col-tot)],['#4fc3a1','#e85555','#252a38'],['Collected','Spent','Remaining']);
+
+  // Payment summary
+  document.getElementById('dash-pay-badge').textContent=MILESTONES.filter(m=>m.paid).length+' of '+MILESTONES.length+' paid';
+  document.getElementById('dash-pay-list').innerHTML=MILESTONES.map(m=>`<div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--border)"><span class="badge ${m.paid?'green':'gray'}" style="width:50px;justify-content:center">${m.paid?'PAID':'—'}</span><span style="flex:1;font-size:11px">${m.label} (${m.pct})</span><span style="font-size:11px;color:var(--accent)">₱${m.amount.toLocaleString()}</span></div>`).join('');
+
+  // Recent expenses
+  document.getElementById('dash-exp-badge').textContent='₱'+getTotalActual().toLocaleString();
+  const recent=expenses.slice(-5).reverse();
+  document.getElementById('dash-exp-list').innerHTML=recent.length?recent.map(e=>`<div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--border)"><span style="font-size:10px;color:var(--text3);width:70px">${e.date}</span><span style="flex:1;font-size:11px">${e.desc||e.code}</span><span style="font-size:11px;color:var(--accent)">₱${parseFloat(e.amount).toLocaleString()}</span></div>`).join(''):'<div style="padding:20px;text-align:center;color:var(--text3)">No expenses yet</div>';
+
+  // Scope — collapsible categories
+  document.getElementById('dash-scope-summary').textContent=done+' done · '+active+' active · '+pending+' pending';
+
+  // Helper: get contract cost for a task
+  // Priority 1: costCodes array (exact code lookup — always accurate)
+  // Priority 2: fuzzy name match (for user-added tasks without costCodes)
+  function getContractCost(task){
+    if(!task.name) return 0;
+    // Use costCodes array if present
+    if(task.costCodes&&task.costCodes.length>0){
+      return task.costCodes.reduce((sum,code)=>{
+        const cc=COST_CODES_SELLING.find(c=>c.code===code&&!isInternalOnly(c));
+        return sum+(cc?(cc.selling||0):0);
+      },0);
+    }
+    // Fallback fuzzy for user-added tasks (no costCodes field)
+    const tn=task.name.toLowerCase().trim();
+    let cc=COST_CODES_SELLING.find(c=>!isInternalOnly(c)&&c.desc&&c.desc.toLowerCase().trim()===tn);
+    if(!cc) cc=COST_CODES_SELLING.find(c=>!isInternalOnly(c)&&c.desc&&tn.includes(c.desc.toLowerCase().trim()));
+    if(!cc) cc=COST_CODES_SELLING.find(c=>!isInternalOnly(c)&&c.desc&&c.desc.toLowerCase().trim().includes(tn));
+    return cc?(cc.selling||0):0;
+  }
+
+  // Group SCHEDULE into sections, strip Roman numeral prefix for display
+  let sections=[];
+  let curSec=null;
+  for(const t of SCHEDULE){
+    if(t.section){
+      // Strip "I. ", "II. " etc for cleaner display
+      const cleanLabel=t.section.replace(/^[IVXLCDM]+\.\s*/,'');
+      curSec={label:t.section,displayLabel:cleanLabel,tasks:[]};
+      sections.push(curSec);
+    } else if(curSec){curSec.tasks.push(t);}
+  }
+
+  // Helper: get contract cost for a category — uses costCat for exact match
+  function getCatContractCost(sec){
+    const catName=sec.costCat||sec.label;
+    return COST_CODES_SELLING
+      .filter(c=>!isInternalOnly(c)&&c.cat===catName)
+      .reduce((s,c)=>s+(c.selling||0),0);
+  }
+
+  let rows='', globalNum=0;
+  for(const sec of sections){
+    const isCollapsed=scopeCollapsed[sec.label]!==false;
+    const tasks=sec.tasks;
+    const latestEndDay=tasks.length?Math.max(...tasks.map(t=>t.targetEndDay||0)):0;
+    const latestEndDate=dayToDate(latestEndDay);
+    // Use authoritative category cost from COST_CODES_SELLING directly
+    const catCost=getCatContractCost(sec);
+    const catDone=tasks.filter(t=>t.pctComplete>=100).length;
+    const catActive=tasks.filter(t=>t.pctComplete>0&&t.pctComplete<100).length;
+    let catStC=catDone===tasks.length&&tasks.length>0?'green':catActive>0||catDone>0?'yellow':'gray';
+    const catPct=tasks.length?Math.round(tasks.reduce((s,t)=>s+t.pctComplete,0)/tasks.length):0;
+    const chevron=isCollapsed?'▶':'▼';
+
+    rows+=`<tr class="section-row" onclick="toggleScopeSection('${sec.label.replace(/'/g,"\\'")}');buildDashboard();" style="cursor:pointer;user-select:none">
+      <td colspan="2" style="padding:7px 12px">
+        <span style="margin-right:6px;font-size:9px;color:var(--accent)">${chevron}</span>
+        <strong>${sec.displayLabel||sec.label}</strong>
+        <span style="margin-left:10px;font-size:9px;color:var(--text3)">${catDone}/${tasks.length} done</span>
+      </td>
+      <td style="font-size:10px;color:var(--text2)">${isCollapsed?(latestEndDate?formatDateShort(latestEndDate):'—'):'&nbsp;'}</td>
+      <td style="font-size:11px;color:var(--accent)">${isCollapsed&&catCost>0?fmtS(catCost):'&nbsp;'}</td>
+      <td></td>
+      <td>${isCollapsed?`<div style="display:flex;align-items:center;gap:6px"><div class="prog-bar" style="width:50px"><div class="prog-fill" style="width:${catPct}%;background:${catStC==='green'?'var(--accent3)':'var(--accent)'}"></div></div><span style="font-size:10px;color:var(--text3)">${catPct}%</span></div>`:'&nbsp;'}</td>
+      <td>${isCollapsed?`<span class="badge ${catStC}">${catStC==='green'?'✓ Done':catStC==='yellow'?'▶ Active':'Pending'}</span>`:'&nbsp;'}</td>
+    </tr>`;
+
+    if(!isCollapsed){
+      for(const t of tasks){
+        globalNum++;
+        const eDate=dayToDate(t.targetEndDay), hasAct=!!t.actualStartDate;
+        const cost=getContractCost(t);
+        let stL,stC;
+        if(t.done||t.pctComplete>=100){stL='✓ Done';stC='green';}
+        else if(t.pctComplete>0||hasAct){stL='▶ Active';stC='yellow';}
+        else{stL='Pending';stC='gray';}
+        const pb=`<div style="display:flex;align-items:center;gap:6px"><div class="prog-bar" style="width:50px"><div class="prog-fill" style="width:${t.pctComplete}%;background:${stC==='green'?'var(--accent3)':'var(--accent)'}"></div></div><span style="font-size:10px;color:var(--text3)">${t.pctComplete}%</span></div>`;
+        rows+=`<tr>
+          <td style="color:var(--text3);padding-left:24px">${globalNum}</td>
+          <td style="padding-left:20px">${t.name}</td>
+          <td style="font-size:10px">${eDate?formatDateShort(eDate):'—'}</td>
+          <td style="font-size:11px;color:${cost>0?'var(--accent)':'var(--text3)'}">${cost>0?fmtS(cost):'—'}</td>
+          <td style="font-size:10px;color:${hasAct?'var(--accent3)':'var(--text3)'}">${hasAct?formatDateShort(t.actualStartDate):'–'}</td>
+          <td>${pb}</td>
+          <td><span class="badge ${stC}">${stL}</span></td>
+        </tr>`;
+      }
+    }
+  }
+
+  // Total row — always use getTotalSelling() so it always matches contract value
+  const contractTotal=getTotalSelling();
+  rows+=`<tr style="background:var(--bg2);font-weight:600;border-top:2px solid var(--border)">
+    <td colspan="2" style="padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3)">Total Contract Value</td>
+    <td style="font-size:10px;color:var(--text3)">—</td>
+    <td style="font-size:13px;color:var(--accent);font-family:Syne,sans-serif;font-weight:700">${fmtS(contractTotal)} <span style="font-size:9px;color:var(--accent3);margin-left:4px">✓</span></td>
+    <td></td><td></td><td></td>
+  </tr>`;
+
+  document.getElementById('dash-scope-tbody').innerHTML=rows;
+
+  // Build S-Curve — defer slightly so canvas is visible/sized
+  setTimeout(buildDashSCurve, 50);
+}
+
+let dashDonuts={};
+function toggleScopeSection(label){
+  // default is collapsed (true), so toggling means: if currently collapsed → expand, else → collapse
+  scopeCollapsed[label] = scopeCollapsed[label] === false ? true : false;
+}
+function buildDonut(canvasId,legendId,data,colors,labels,centerText){
+  if(dashDonuts[canvasId]){dashDonuts[canvasId].destroy();}
+  const ctx=document.getElementById(canvasId).getContext('2d');
+  const plugins=centerText?[{id:'centerText',afterDraw(chart){const{ctx:c,width,height}=chart;c.save();c.font='bold 18px Syne,sans-serif';c.fillStyle='#e8eaf0';c.textAlign='center';c.textBaseline='middle';c.fillText(centerText,width/2,height/2);c.restore();}}]:[];
+  dashDonuts[canvasId]=new Chart(ctx,{type:'doughnut',data:{labels,datasets:[{data,backgroundColor:colors,borderWidth:0,hoverOffset:4}]},options:{responsive:false,cutout:'65%',plugins:{legend:{display:false}}},plugins});
+  document.getElementById(legendId).innerHTML=labels.map((l,i)=>`<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px"><div style="width:8px;height:8px;border-radius:50%;background:${colors[i]}"></div><span style="color:var(--text2)">${l}</span></div>`).join('');
+}
+
+let dashSCurveChart=null;
+function buildDashSCurve(){
+  if(dashSCurveChart){dashSCurveChart.destroy();dashSCurveChart=null;}
+  const el=document.getElementById('dash-scurve-chart');
+  if(!el)return;
+  const TD=PROJECT.totalDays;
+  const labels=Array.from({length:TD+1},(_,i)=>'D'+i);
+  const planned=[0,...SCURVE_PLANNED.slice(0,TD).map(d=>d.cPct)];
+  const totalBudget=getTotalAllBudget();
+  const actualCostByDay=new Array(TD+1).fill(null);
+  for(let d=0;d<=TD;d++){
+    const dateStr=dayToDate(d);if(!dateStr)continue;
+    const dayExp=expenses.filter(e=>e.date<=dateStr).reduce((s,e)=>s+parseFloat(e.amount||0),0);
+    if(dayExp>0||d<=getCurrentDay())actualCostByDay[d]=totalBudget>0?(dayExp/totalBudget*100):0;
+  }
+  const actualSchedByDay=new Array(TD+1).fill(null);
+  if(scheduleLocked){
+    const curDayDS=getCurrentDay();
+    for(let d=0;d<=curDayDS;d++){
+      let weightedPct=0,totalWeight=0;
+      for(const t of SCHEDULE.filter(x=>!x.section)){
+        const cc=COST_CODES_SELLING.find(c=>!isInternalOnly(c)&&c.desc&&t.name&&(c.desc.toLowerCase()===t.name.toLowerCase()||c.desc.toLowerCase().includes(t.name.split(' ')[0].toLowerCase())||t.name.toLowerCase().includes(c.desc.split(' ')[0].toLowerCase())));
+        const w=cc?(cc.selling||1):1;
+        totalWeight+=w;
+        const startDay=t.actualStartDate?dateToDay(t.actualStartDate):null;
+        if(startDay!==null&&startDay<=d){
+          const span=curDayDS-startDay;
+          const taskPctAtD=span>0?Math.min(t.pctComplete,(t.pctComplete/span*(d-startDay))):t.pctComplete;
+          weightedPct+=w*taskPctAtD;
+        } else if(startDay===null&&t.pctComplete>0&&t.targetStartDay<=d){
+          const span=curDayDS-t.targetStartDay;
+          const taskPctAtD=span>0?Math.min(t.pctComplete,(t.pctComplete/span*(d-t.targetStartDay))):t.pctComplete;
+          weightedPct+=w*taskPctAtD;
+        }
+      }
+      actualSchedByDay[d]=totalWeight>0?(weightedPct/totalWeight):0;
+    }
+  }
+  const annotations={};
+  challenges.forEach((ch,i)=>{
+    const chDay=dateToDay(ch.date);
+    if(chDay!==null&&chDay<=TD){
+      const sevColor={low:'#f5c842',medium:'#e8843a',high:'#e85555',critical:'#ff2222'};
+      annotations['ch'+i]={type:'point',xValue:'D'+chDay,yValue:actualCostByDay[chDay]||planned[chDay]||0,backgroundColor:sevColor[ch.severity]||'#e85555',borderColor:'#000',borderWidth:2,radius:5,label:{display:true,content:ch.title,position:'end',backgroundColor:'rgba(0,0,0,0.8)',color:'#fff',font:{size:9},padding:3}};
+    }
+  });
+  const curDay=getCurrentDay();
+  if(curDay>0&&curDay<=TD){annotations['today']={type:'line',xMin:'D'+curDay,xMax:'D'+curDay,borderColor:'#29b6f6',borderWidth:2,borderDash:[4,2],label:{display:true,content:'Today',position:'start',backgroundColor:'#29b6f6',color:'#000',font:{size:9,weight:'bold'},padding:3}};}
+  dashSCurveChart=new Chart(el.getContext('2d'),{
+    type:'line',
+    data:{labels,datasets:[
+      {label:'Planned',data:planned,borderColor:'#f5c842',backgroundColor:'rgba(245,200,66,0.06)',borderWidth:2,pointRadius:0,fill:true,tension:0.4},
+      {label:'Actual (Cost)',data:actualCostByDay,borderColor:'#4fc3a1',borderWidth:2.5,pointRadius:2,pointBackgroundColor:'#4fc3a1',fill:false,tension:0.3,spanGaps:true},
+      {label:'Actual (Schedule)',data:actualSchedByDay,borderColor:'#7c6aff',borderWidth:2,pointRadius:1,borderDash:[5,3],fill:false,tension:0.3,spanGaps:true},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},annotation:{annotations}},scales:{x:{ticks:{color:'#5a6278',font:{size:9},maxTicksLimit:16},grid:{color:'#1a1e28'}},y:{min:0,max:100,position:'right',ticks:{color:'#5a6278',font:{size:10},callback:v=>v+'%'},grid:{color:'#1a1e28'}}}}
+  });
+}
+
+// ============================================================
+// CONTRACT SETUP
+// ============================================================
+let contractLocked = false;
+
+// Default categories with prefixes
+const CONTRACT_CATEGORIES = [
+  {name:'General Requirements', prefix:'GR'},
+  {name:'Drywall / Doors & Windows', prefix:'DW'},
+  {name:'Ceiling Works', prefix:'CW'},
+  {name:'Carpentry Works', prefix:'CP'},
+  {name:'Floor Finishes', prefix:'FL'},
+  {name:'Wall Finishes', prefix:'WF'},
+  {name:'Ceiling Finishes', prefix:'CF'},
+  {name:'Plumbing Works', prefix:'PL'},
+  {name:'Electrical Works', prefix:'EL'},
+];
+
+function buildContract(){
+  const contractItems=COST_CODES_SELLING.filter(c=>!isInternalOnly(c));
+  const total=contractItems.reduce((s,c)=>s+(c.selling||0),0);
+  const activeCats=new Set(contractItems.filter(c=>(c.selling||0)>0).map(c=>c.cat));
+
+  // KPIs
+  document.getElementById('ct-total').textContent=fmtS(total);
+  document.getElementById('ct-items-count').textContent=contractItems.filter(c=>(c.selling||0)>0).length+' items with values';
+  document.getElementById('ct-cat-count').textContent=activeCats.size;
+  document.getElementById('ct-status').textContent=contractLocked?'Locked':'Draft';
+  document.getElementById('ct-status').style.color=contractLocked?'var(--accent3)':'var(--accent)';
+  document.getElementById('ct-status-sub').textContent=contractLocked?'Contract finalized':'Not yet locked';
+
+  // Actions visibility
+  document.getElementById('ct-actions').style.display=contractLocked?'none':'flex';
+
+  // Contract items table
+  let lc='', tTotal=0;
+  const tbody=document.getElementById('contract-tbody');
+  let rows='';
+  contractItems.forEach((c,i)=>{
+    const realIdx=COST_CODES_SELLING.indexOf(c);
+    const amt=c.selling||0;
+    tTotal+=amt;
+    if(c.cat!==lc){
+      rows+=`<tr class="section-row"><td colspan="5">${c.cat}</td></tr>`;
+      lc=c.cat;
+    }
+    if(contractLocked){
+      if(amt===0) return; // hide blank items when locked
+      const wt=total>0?((amt/total)*100).toFixed(2):'0';
+      rows+=`<tr><td style="color:var(--text3)">${c.code}</td><td>${c.desc}</td><td style="color:var(--accent)">₱${amt.toLocaleString()}</td><td style="color:var(--text2)">${wt}%</td><td></td></tr>`;
+    } else {
+      const wt=total>0?((amt/total)*100).toFixed(1):'—';
+      rows+=`<tr>
+        <td style="color:var(--text3)">${c.code}</td>
+        <td><input type="text" value="${c.desc}" onchange="onContractDescChange(${realIdx},this.value)" style="background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:4px 8px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;width:100%;outline:none"></td>
+        <td><input type="number" class="budget-input" value="${amt||''}" placeholder="₱ 0.00" onchange="onContractAmtChange(${realIdx},this.value)"></td>
+        <td style="color:var(--text3);font-size:10px">${amt>0?wt+'%':'—'}</td>
+        <td><span style="cursor:pointer;color:var(--danger);font-size:12px" onclick="deleteContractItem(${realIdx})">✕</span></td>
+      </tr>`;
+    }
+  });
+  tbody.innerHTML=rows;
+
+  // Footer totals
+  document.getElementById('contract-tfoot').innerHTML=`<tr style="background:var(--bg2);font-weight:600">
+    <td colspan="2" style="border-top:2px solid var(--border)">TOTAL CONTRACT</td>
+    <td style="color:var(--accent);border-top:2px solid var(--border)">₱${tTotal.toLocaleString()}</td>
+    <td style="border-top:2px solid var(--border)">${tTotal>0?'100%':'—'}</td>
+    <td style="border-top:2px solid var(--border)"></td>
+  </tr>`;
+
+  updateContractLockUI();
+}
+
+function onContractAmtChange(idx,val){
+  const c=COST_CODES_SELLING[idx];
+  if(c) c.selling=parseFloat(val)||0;
+  TOTAL_CONTRACT=getTotalSelling();
+  buildContract();autoSave();
+}
+
+function onContractDescChange(idx,val){
+  const c=COST_CODES_SELLING[idx];
+  if(c) c.desc=val;
+  autoSave();
+}
+
+function deleteContractItem(idx){
+  const c=COST_CODES_SELLING[idx];
+  if(!c) return;
+  if(getActualByCode(c.code)>0){alert('Has expenses logged. Remove them first.');return;}
+  if(!confirm('Remove '+c.code+' — '+c.desc+'?')) return;
+  COST_CODES_SELLING.splice(idx,1);
+  const bi=COST_CODES_BUDGET.findIndex(x=>x.code===c.code);
+  if(bi>=0) COST_CODES_BUDGET.splice(bi,1);
+  // Also remove from schedule if exists
+  const si=SCHEDULE.findIndex(t=>t.id && t.name===c.desc);
+  if(si>=0) SCHEDULE.splice(si,1);
+  TOTAL_CONTRACT=getTotalSelling();
+  refreshDropdowns();
+  buildContract();autoSave();
+}
+
+function openContractItemModal(forceCat){
+  document.getElementById('contract-item-modal').classList.add('show');
+  const sel=document.getElementById('ct-item-cat');
+  sel.innerHTML='';
+  CONTRACT_CATEGORIES.forEach(cat=>{
+    const opt=document.createElement('option');
+    opt.value=cat.name;opt.textContent=cat.name;
+    sel.appendChild(opt);
+  });
+  if(forceCat) sel.value=forceCat;
+  suggestContractCode();
+  document.getElementById('ct-item-desc').value='';
+  document.getElementById('ct-item-amount').value='';
+  document.getElementById('ct-item-notes').value='';
+  document.getElementById('ct-modal-title').textContent='+ Add Line Item';
+  document.getElementById('ct-item-amount').parentElement.style.display='';
+}
+
+function suggestContractCode(){
+  const catName=document.getElementById('ct-item-cat').value;
+  const cat=CONTRACT_CATEGORIES.find(c=>c.name===catName);
+  const prefix=cat?cat.prefix:'XX';
+  let mx=0;
+  COST_CODES_SELLING.forEach(c=>{
+    if(c.code.startsWith(prefix+'-')){const n=parseInt(c.code.split('-')[1]);if(n>mx)mx=n;}
+  });
+  document.getElementById('ct-item-code').value=prefix+'-'+String(mx+1).padStart(3,'0');
+}
+
+// Hook category change to auto-suggest code
+document.addEventListener('DOMContentLoaded',()=>{
+  const s=document.getElementById('ct-item-cat');
+  if(s) s.addEventListener('change',suggestContractCode);
+});
+
+function submitContractItem(){
+  const catName=document.getElementById('ct-item-cat').value;
+  const code=document.getElementById('ct-item-code').value.trim();
+  const desc=document.getElementById('ct-item-desc').value.trim();
+  const amt=parseFloat(document.getElementById('ct-item-amount').value)||0;
+  if(!code||!desc){alert('Enter code and description.');return;}
+  if(COST_CODES_SELLING.find(c=>c.code===code)){alert('Code already exists.');return;}
+
+  // Add to cost codes
+  COST_CODES_SELLING.push({
+    cat:catName, code, desc,
+    budget:0, selling:amt, budgetPct:0,
+    added:true
+  });
+  COST_CODES_BUDGET.push({code,budget:0});
+
+  // Only add to schedule if no task with same name exists
+  if(amt>0){
+    const alreadyInSchedule=SCHEDULE.some(t=>t.id&&t.name&&t.name.toLowerCase()===desc.toLowerCase());
+    if(!alreadyInSchedule){
+      const taskId='t'+Date.now();
+      const secIdx=findScheduleSectionIdx(catName);
+      let insertIdx=SCHEDULE.length;
+      if(secIdx>=0){
+        // Find end of this section
+        let j=secIdx+1;
+        while(j<SCHEDULE.length&&!SCHEDULE[j].section)j++;
+        insertIdx=j;
+      } else {
+        // Section doesn't exist yet — add it then insert task after it
+        SCHEDULE.push({section:catName});
+        insertIdx=SCHEDULE.length;
+      }
+      SCHEDULE.splice(insertIdx,0,{id:taskId,name:desc,targetStartDay:0,targetEndDay:PROJECT.totalDays,actualStartDate:null,pctComplete:0,costCodes:[code]});
+    }
+  }
+
+  TOTAL_CONTRACT=getTotalSelling();
+  refreshDropdowns();
+  closeModal('contract-item-modal');
+  buildContract();autoSave();
+}
+
+function openContractCatModal(){
+  document.getElementById('contract-cat-modal').classList.add('show');
+  document.getElementById('ct-cat-name').value='';
+  document.getElementById('ct-cat-prefix').value='';
+}
+
+function submitContractCat(){
+  const name=document.getElementById('ct-cat-name').value.trim();
+  const prefix=document.getElementById('ct-cat-prefix').value.trim().toUpperCase();
+  if(!name){alert('Enter category name.');return;}
+  if(!prefix||prefix.length<2){alert('Enter a 2-3 letter prefix.');return;}
+  if(CONTRACT_CATEGORIES.find(c=>c.name===name)){alert('Category already exists.');return;}
+  if(CONTRACT_CATEGORIES.find(c=>c.prefix===prefix)){alert('Prefix already used.');return;}
+  CONTRACT_CATEGORIES.push({name,prefix});
+  // Add section to SCHEDULE with costCat mapping
+  if(!SCHEDULE.some(t=>t.section&&t.costCat===name)){
+    SCHEDULE.push({section:name, costCat:name});
+  }
+  closeModal('contract-cat-modal');
+  buildContract();autoSave();
+}
+
+function toggleContractLock(){
+  if(!contractLocked){
+    const total=getTotalSelling();
+    if(total<=0){alert('Contract has no value. Add line items with amounts first.');return;}
+    if(!confirm('Lock contract at ₱'+total.toLocaleString()+'? This will finalize line items and push to Budget Monitoring & Gantt.')) return;
+    contractLocked=true;
+    // Push: remove items with 0 selling from non-manpower (cleanup)
+    // Rebuild schedule from contract items
+    rebuildScheduleFromContract();
+  } else {
+    if(!confirm('Unlock contract? This allows editing line items and amounts again.')) return;
+    contractLocked=false;
+  }
+  buildContract();autoSave();
+}
+
+function rebuildScheduleFromContract(){
+  const contractItems=COST_CODES_SELLING.filter(c=>!isInternalOnly(c)&&(c.selling||0)>0);
+
+  // Ensure a section exists for every contract category
+  CONTRACT_CATEGORIES.forEach(cat=>{
+    const hasSection=SCHEDULE.some(t=>t.section&&(t.costCat===cat.name||t.section===cat.name));
+    if(!hasSection) SCHEDULE.push({section:cat.name, costCat:cat.name});
+  });
+
+  // For each contract item, ensure a schedule task exists
+  // Match by costCode first (reliable), then by exact name
+  contractItems.forEach(c=>{
+    const existsByCode=SCHEDULE.some(t=>t.id&&Array.isArray(t.costCodes)&&t.costCodes.includes(c.code));
+    const existsByName=SCHEDULE.some(t=>t.id&&t.name&&t.name.toLowerCase().trim()===c.desc.toLowerCase().trim());
+    if(!existsByCode&&!existsByName){
+      const secI=findScheduleSectionIdx(c.cat);
+      let insertIdx=SCHEDULE.length;
+      if(secI>=0){
+        let j=secI+1;
+        while(j<SCHEDULE.length&&!SCHEDULE[j].section) j++;
+        insertIdx=j;
+      }
+      SCHEDULE.splice(insertIdx,0,{
+        id:'t'+Date.now()+Math.random().toString(36).substr(2,5),
+        name:c.desc, costCodes:[c.code],
+        targetStartDay:0, targetEndDay:PROJECT.totalDays,
+        actualStartDate:null, pctComplete:0
+      });
+    }
+  });
+
+  // Remove orphan tasks whose costCode is no longer in the contract
+  const contractCodes=new Set(contractItems.map(c=>c.code));
+  for(let i=SCHEDULE.length-1;i>=0;i--){
+    const t=SCHEDULE[i];
+    if(t.id&&Array.isArray(t.costCodes)&&t.costCodes.length>0&&!t.costCodes.some(code=>contractCodes.has(code))){
+      SCHEDULE.splice(i,1);
+    }
+  }
+}
+
+function updateContractLockUI(){
+  const icon=document.getElementById('contract-lock-icon');
+  const label=document.getElementById('contract-lock-label');
+  const btn=document.getElementById('contract-lock-btn');
+  if(contractLocked){
+    icon.textContent='🔒';
+    label.innerHTML='<span class="locked-text">Contract LOCKED — line items finalized</span>';
+    btn.textContent='🔓 Unlock';btn.className='btn btn-success';
+  } else {
+    icon.textContent='🔓';
+    label.innerHTML='<span class="unlocked-text">Contract UNLOCKED — edit items and amounts</span>';
+    btn.textContent='🔒 Lock Contract';btn.className='btn btn-danger';
+  }
+}
+
+// ============================================================
+// BUDGET MONITORING
+// ============================================================
+function toggleBudgetLock(){if(!budgetLocked){if(!confirm('Lock budget?'))return;budgetLocked=true;}else{if(!confirm('Unlock?'))return;budgetLocked=false;}updateBudgetLockUI();buildBVC();autoSave();}
+function updateBudgetLockUI(){const i=document.getElementById('lock-icon'),l=document.getElementById('lock-label'),b=document.getElementById('lock-btn'),v=document.getElementById('vo-btn'),a=document.getElementById('add-item-btn');if(budgetLocked){i.textContent='🔒';l.innerHTML='<span class="locked-text">LOCKED — VOs only</span>';b.textContent='🔓 Unlock';b.className='btn btn-success';v.style.display='';a.style.display='none';}else{i.textContent='🔓';l.innerHTML='<span class="unlocked-text">UNLOCKED — set budget % per line item</span>';b.textContent='🔒 Lock';b.className='btn btn-danger';v.style.display='none';a.style.display='';}}
+function onBudgetPctChange(code,pctVal){
+  const c=COST_CODES_SELLING.find(z=>z.code===code);if(!c)return;
+  const pct=parseFloat(pctVal)||0;
+  c.budgetPct=pct;
+  c.budget=Math.round((c.selling||0)*pct/100);
+  buildBVC();autoSave();
+}
+function onBudgetAmtChange(code,val){
+  const c=COST_CODES_SELLING.find(z=>z.code===code);if(!c)return;
+  c.budget=parseFloat(val)||0;
+  if(c.selling>0) c.budgetPct=parseFloat(((c.budget/c.selling)*100).toFixed(1));
+  buildBVC();autoSave();
+}
+function onManpowerBudgetChange(code,val){
+  const c=COST_CODES_SELLING.find(z=>z.code===code);if(!c)return;
+  c.budget=parseFloat(val)||0;
+  buildBVC();autoSave();
+}
+function openAddItemModal(){document.getElementById('add-item-modal').classList.add('show');suggestNextCode();}
+function suggestNextCode(){const c=document.getElementById('new-item-cat').value,pm={'General Requirements':'GR','Drywall / Doors & Windows':'DW','Ceiling Works':'CW','Carpentry Works':'CP','Floor Finishes':'FL','Wall Finishes':'WF','Ceiling Finishes':'CF','Plumbing Works':'PL','Electrical Works':'EL','Manpower / Labor':'MP'};const p=pm[c]||'XX';let mx=0;COST_CODES_SELLING.forEach(x=>{if(x.code.startsWith(p+'-')){const n=parseInt(x.code.split('-')[1]);if(n>mx)mx=n;}});document.getElementById('new-item-code').value=p+'-'+String(mx+1).padStart(3,'0');}
+function submitAddItem(){const c=document.getElementById('new-item-cat').value,code=document.getElementById('new-item-code').value.trim(),desc=document.getElementById('new-item-desc').value.trim(),sell=parseFloat(document.getElementById('new-item-selling').value)||0,int=parseFloat(document.getElementById('new-item-budget').value)||0;const isMP=c==='Manpower / Labor';if(!code||!desc){alert('Enter code+desc.');return;}if(!isMP&&sell<=0){alert('Enter selling amount.');return;}if(COST_CODES_SELLING.find(x=>x.code===code)){alert('Code exists.');return;}COST_CODES_SELLING.push({cat:c,code,desc,budget:isMP?int:0,selling:isMP?0:sell,budgetPct:0,added:true});if(int>0)COST_CODES_BUDGET.push({code,budget:int});TOTAL_CONTRACT=getTotalSelling();refreshDropdowns();closeModal('add-item-modal');buildBVC();updateKPIs();autoSave();}
+function deleteLineItem(i){const x=COST_CODES_SELLING[i];if(!x)return;if(getActualByCode(x.code)>0){alert('Has expenses.');return;}if(!confirm('Remove '+x.code+'?'))return;COST_CODES_SELLING.splice(i,1);const bi=COST_CODES_BUDGET.findIndex(c=>c.code===x.code);if(bi>=0)COST_CODES_BUDGET.splice(bi,1);TOTAL_CONTRACT=getTotalSelling();refreshDropdowns();buildBVC();updateKPIs();autoSave();}
+function refreshDropdowns(){const s=document.getElementById('exp-code');s.innerHTML='';let lc='';COST_CODES_SELLING.forEach(c=>{if(c.cat!==lc){const o=document.createElement('optgroup');o.label=c.cat;s.appendChild(o);lc=c.cat;}const opt=document.createElement('option');opt.value=c.code;opt.textContent=c.code+' — '+c.desc;s.appendChild(opt);});}
+function openVOModal(){document.getElementById('vo-modal').classList.add('show');document.getElementById('vo-date').value=new Date().toISOString().split('T')[0];document.getElementById('vo-ref').value='VO-'+String(variationOrders.length+1).padStart(3,'0');const s=document.getElementById('vo-code');s.innerHTML='';let lc='';COST_CODES_SELLING.forEach(c=>{if(c.cat!==lc){const o=document.createElement('optgroup');o.label=c.cat;s.appendChild(o);lc=c.cat;}const opt=document.createElement('option');opt.value=c.code;opt.textContent=c.code+' — '+c.desc;s.appendChild(opt);});}
+function submitVO(){const ty=document.getElementById('vo-type').value,dt=document.getElementById('vo-date').value,cd=document.getElementById('vo-code').value,am=parseFloat(document.getElementById('vo-amount').value)||0,rf=document.getElementById('vo-ref').value,rs=document.getElementById('vo-reason').value;if(!am||!dt){alert('Fill date+amount.');return;}const c=COST_CODES_SELLING.find(x=>x.code===cd);if(!c)return;if(ty==='additive')c.budget+=am;else{if(am>c.budget){alert('Exceeds budget.');return;}c.budget-=am;}variationOrders.push({num:variationOrders.length+1,type:ty,date:dt,code:cd,desc:c.desc,amount:am,ref:rf,reason:rs});TOTAL_CONTRACT=getTotalSelling();closeModal('vo-modal');buildBVC();updateKPIs();autoSave();}
+function deleteVO(i){if(!confirm('Remove VO?'))return;const v=variationOrders[i];const c=COST_CODES_SELLING.find(x=>x.code===v.code);if(c){if(v.type==='additive')c.budget-=v.amount;else c.budget+=v.amount;}variationOrders.splice(i,1);variationOrders.forEach((x,j)=>x.num=j+1);TOTAL_CONTRACT=getTotalSelling();buildBVC();updateKPIs();autoSave();}
+
+function buildBVC(){
+  const bt=getTotalSelling(), contractBudget=getTotalContractBudget(), mpBudget=getTotalManpower(), totalBudget=contractBudget+mpBudget;
+  const tot=getTotalActual(), income=bt-totalBudget, marginPct=bt>0?((income/bt)*100).toFixed(1):'0';
+  const overSelling=contractBudget>bt;
+
+  document.getElementById('bvc-contract-total').textContent=fmtS(bt);
+  document.getElementById('bvc-budget-total').textContent=fmtS(totalBudget);
+  document.getElementById('bvc-budget-pct-sub').textContent=bt>0?((totalBudget/bt)*100).toFixed(1)+'% of contract'+(overSelling?' ⚠':''):'—';
+  document.getElementById('bvc-income').textContent=(income>=0?'':'−')+fmtS(Math.abs(income));
+  document.getElementById('bvc-income').className='kpi-value '+(income>=0?'pos':'neg');
+  document.getElementById('bvc-income-sub').textContent=marginPct+'% margin'+(income<0?' ⚠ LOSS':'');
+  document.getElementById('bvc-actual').textContent=fmtS(tot);
+  document.getElementById('bvc-pct').textContent=totalBudget>0?((tot/totalBudget)*100).toFixed(1)+'% spent':'—';
+  document.getElementById('bvc-active-badge').textContent=COST_CODES_SELLING.filter(c=>getActualByCode(c.code)>0).length+' active';
+
+  // === CONTRACT ITEMS TABLE ===
+  const contractItems=COST_CODES_SELLING.filter(c=>!isInternalOnly(c));
+  let lc='',tContract=0,tBudget=0,tActual=0;
+  const contractRows=contractItems.map((c,idx)=>{
+    const realIdx=COST_CODES_SELLING.indexOf(c);
+    const sell=c.selling||0;
+    const bPct=c.budgetPct||0;
+    const bAmt=c.budget||0;
+    const act=getActualByCode(c.code);
+    const antic=sell-bAmt;
+    const mPct=sell>0?((antic/sell)*100).toFixed(1):'—';
+    tContract+=sell; tBudget+=bAmt; tActual+=act;
+
+    let st,sc;
+    if(bAmt===0&&act===0){st='Set Budget';sc='gray';}
+    else if(act===0){st='Not Started';sc='gray';}
+    else if(bAmt>0&&act>bAmt){st='⚠ Over';sc='red';}
+    else if(bAmt>0&&(act/bAmt)>=0.9){st='⚡ Near';sc='orange';}
+    else if(bAmt>0&&(act/bAmt)>=0.5){st='▶ Progress';sc='yellow';}
+    else{st='✔ On Track';sc='green';}
+    const budgetOverSell=sell>0&&bAmt>sell;
+
+    let cr='';if(c.cat!==lc){cr=`<tr class="section-row"><td colspan="10">${c.cat}</td></tr>`;lc=c.cat;}
+    const badges=c.added?' <span class="badge blue" style="font-size:8px;padding:1px 4px">NEW</span>':'';
+
+    let pctCell,amtCell;
+    if(budgetLocked){
+      pctCell=`<td style="text-align:center">${bPct}%</td>`;
+      amtCell=`<td>₱${bAmt.toLocaleString()}</td>`;
+    } else {
+      pctCell=`<td><input type="number" class="budget-input" style="width:60px" value="${bPct||''}" placeholder="%" min="0" max="200" step="0.1" onchange="onBudgetPctChange('${c.code}',this.value)"></td>`;
+      amtCell=`<td style="font-size:11px;color:var(--text2)">${bAmt>0?'₱'+bAmt.toLocaleString():'—'}</td>`;
+    }
+    const dc=!budgetLocked?(act===0?`<td><span style="cursor:pointer;color:var(--danger)" onclick="deleteLineItem(${realIdx})">✕</span></td>`:`<td>–</td>`):`<td></td>`;
+
+    return cr+`<tr>
+      <td style="color:var(--text3)">${c.code}${badges}</td>
+      <td>${c.desc}</td>
+      <td style="color:var(--accent)">₱${sell.toLocaleString()}</td>
+      ${pctCell}
+      ${amtCell}
+      <td style="color:${act>0?'var(--accent3)':'var(--text3)'}">${act>0?'₱'+act.toLocaleString():'—'}</td>
+      <td class="${antic>=0?'pos':'neg'}" style="${budgetOverSell?'font-weight:600':''}">${bAmt>0?((antic>=0?'+':'')+'₱'+Math.abs(antic).toLocaleString()):'—'}${budgetOverSell?' ⚠':''}</td>
+      <td style="color:var(--text2)">${bAmt>0?mPct+'%':'—'}</td>
+      <td><span class="badge ${sc}">${st}</span></td>
+      ${dc}
+    </tr>`;
+  }).join('');
+
+  // Totals footer
+  const tAntic=tContract-tBudget, tMargin=tContract>0?((tAntic/tContract)*100).toFixed(1):'0';
+  document.getElementById('bvc-tfoot').innerHTML=`<tr style="background:var(--bg2);font-weight:600;font-size:12px">
+    <td colspan="2" style="border-top:2px solid var(--border)">TOTALS</td>
+    <td style="color:var(--accent);border-top:2px solid var(--border)">₱${tContract.toLocaleString()}</td>
+    <td style="border-top:2px solid var(--border)"></td>
+    <td style="border-top:2px solid var(--border)">₱${tBudget.toLocaleString()}</td>
+    <td style="color:var(--accent3);border-top:2px solid var(--border)">₱${tActual.toLocaleString()}</td>
+    <td class="${tAntic>=0?'pos':'neg'}" style="border-top:2px solid var(--border)">${tAntic>=0?'+':''}₱${Math.abs(tAntic).toLocaleString()}</td>
+    <td style="border-top:2px solid var(--border)">${tMargin}%</td>
+    <td colspan="2" style="border-top:2px solid var(--border)"></td>
+  </tr>`;
+
+  // Warning if over
+  let warn='';
+  if(overSelling&&!budgetLocked) warn=`<tr><td colspan="10" style="background:rgba(232,85,85,0.1);color:var(--danger);padding:10px 16px;font-size:11px">⚠ Total budget (₱${contractBudget.toLocaleString()}) exceeds contract (₱${bt.toLocaleString()}) by ₱${(contractBudget-bt).toLocaleString()}</td></tr>`;
+  document.querySelector('#bvc-table tbody').innerHTML=warn+contractRows;
+
+  // === MANPOWER TABLE ===
+  const mpItems=COST_CODES_SELLING.filter(c=>isInternalOnly(c));
+  let mTotalBud=0,mTotalAct=0;
+  document.querySelector('#mp-table tbody').innerHTML=mpItems.map((c,i)=>{
+    const realIdx=COST_CODES_SELLING.indexOf(c);
+    const act=getActualByCode(c.code),rem=c.budget-act,pu=c.budget>0&&act>0?(act/c.budget*100):0;
+    mTotalBud+=c.budget; mTotalAct+=act;
+    let st,sc;if(c.budget===0&&act===0){st='Set Budget';sc='gray';}else if(act===0){st='Not Started';sc='gray';}else if(c.budget>0&&act>c.budget){st='⚠ Over';sc='red';}else if(pu>=90){st='⚡ Near';sc='orange';}else{st='✔ OK';sc='green';}
+    const bc=budgetLocked?`<td>₱${c.budget.toLocaleString()}</td>`:`<td><input type="number" class="budget-input" value="${c.budget||''}" placeholder="₱ amount" onchange="onManpowerBudgetChange('${c.code}',this.value)"></td>`;
+    const dc=!budgetLocked&&act===0?`<td><span style="cursor:pointer;color:var(--danger)" onclick="deleteLineItem(${realIdx})">✕</span></td>`:`<td></td>`;
+    return`<tr><td style="color:var(--text3)">${c.code}</td><td>${c.desc}</td>${bc}<td style="color:${act>0?'var(--accent3)':'var(--text3)'}">${act>0?'₱'+act.toLocaleString():'—'}</td><td style="color:var(--text2)">${c.budget>0?'₱'+rem.toLocaleString():'—'}</td><td>${c.budget>0?pu.toFixed(1)+'%':'—'}</td><td><span class="badge ${sc}">${st}</span></td>${dc}</tr>`;
+  }).join('');
+  document.getElementById('mp-tfoot').innerHTML=`<tr style="background:var(--bg2);font-weight:600;font-size:12px"><td colspan="2" style="border-top:2px solid var(--border)">TOTAL MANPOWER</td><td style="border-top:2px solid var(--border)">₱${mTotalBud.toLocaleString()}</td><td style="color:var(--accent3);border-top:2px solid var(--border)">₱${mTotalAct.toLocaleString()}</td><td style="border-top:2px solid var(--border)">₱${(mTotalBud-mTotalAct).toLocaleString()}</td><td colspan="3" style="border-top:2px solid var(--border)"></td></tr>`;
+
+  updateBudgetLockUI();
+  // VO log
+  const vp=document.getElementById('vo-log-panel'),vt=document.getElementById('vo-tbody');
+  if(!variationOrders.length){vp.style.display='none';return;}
+  vp.style.display='';document.getElementById('vo-log-count').textContent=variationOrders.length+' VO'+(variationOrders.length>1?'s':'');
+  vt.innerHTML=variationOrders.map((v,i)=>`<tr><td>${v.ref}</td><td>${formatDateShort(v.date)}</td><td><span class="vo-badge ${v.type}">${v.type==='additive'?'+':'−'}</span></td><td>${v.code}</td><td>${v.desc}</td><td class="${v.type==='additive'?'pos':'neg'}">${v.type==='additive'?'+':'−'}₱${v.amount.toLocaleString()}</td><td style="color:var(--text2)">${v.reason||'–'}</td><td><span style="cursor:pointer;color:var(--danger)" onclick="deleteVO(${i})">✕</span></td></tr>`).join('');
+  document.getElementById('sidebar-contract').textContent='₱'+getTotalSelling().toLocaleString('en',{minimumFractionDigits:2});
+}
+
+// ============================================================
+// PAYMENTS / CASHFLOW / EXPENSES (condensed from v2)
+// ============================================================
+function buildPayments(){renderMilestones();updatePayKPIs();}
+function renderMilestones(){document.getElementById('milestone-list').innerHTML=MILESTONES.map(m=>`<div class="milestone-card ${m.paid?'paid':''}"><div style="flex-shrink:0;margin-top:3px"><div class="pay-check ${m.paid?'checked':''}" onclick="togglePay(${m.id})">${m.paid?'✓':''}</div></div><div class="ms-pct-badge" style="background:${m.bg};border:1px solid ${m.bd}"><span style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:${m.color}">${m.pct}</span></div><div class="ms-info"><div class="ms-title">${m.label}</div><div class="ms-trigger">${m.trigger}</div><div class="ms-amount">₱${m.amount.toLocaleString('en',{minimumFractionDigits:2})}</div><div style="display:flex;align-items:center;gap:8px;margin-top:6px"><span style="font-size:10px;color:var(--text3)">Received:</span><input class="ms-date-input" type="date" value="${m.paidDate}" onchange="setPayDate(${m.id},this.value)" ${!m.paid?'disabled style="opacity:0.4"':''}></div><div class="ms-paid-on">${m.paid?'✓ '+(m.paidDate?formatDateShort(m.paidDate):'Received'):''}</div></div><div style="flex-shrink:0"><span class="badge ${m.paid?'green':'gray'}">${m.paid?'PAID':'PENDING'}</span></div></div>`).join('');}
+function togglePay(id){const m=MILESTONES.find(x=>x.id===id);m.paid=!m.paid;if(m.paid&&!m.paidDate)m.paidDate=new Date().toISOString().split('T')[0];if(!m.paid)m.paidDate='';renderMilestones();updatePayKPIs();updateCashFlow();updateKPIs();autoSave();}
+function setPayDate(id,v){MILESTONES.find(x=>x.id===id).paidDate=v;updateCashFlow();autoSave();}
+function updatePayKPIs(){const col=MILESTONES.filter(m=>m.paid).reduce((s,m)=>s+m.amount,0),out=TOTAL_CONTRACT-col,exp=getTotalActual(),net=col-exp,cp=(col/TOTAL_CONTRACT*100).toFixed(1);const se=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};se('pay-collected',fmtS(col));se('pay-collected-pct',cp+'%');se('pay-outstanding',fmtS(out));se('pay-outstanding-pct',(100-parseFloat(cp)).toFixed(1)+'%');se('pay-expenses',fmtS(exp));se('pay-net',(net>=0?'+':'-')+fmtS(Math.abs(net)));if(document.getElementById('pay-net'))document.getElementById('pay-net').className='kpi-value '+(net>=0?'pos':'neg');se('pay-paid-count',MILESTONES.filter(m=>m.paid).length+' of 4');se('pay-balance-badge','Net: '+(net>=0?'+':'-')+fmtS(Math.abs(net)));buildWaterfall(col,exp,net,out);}
+function buildWaterfall(c,e,n,o){const el=document.getElementById('cashflow-waterfall');if(!el)return;el.innerHTML=[{i:'↓',c:'in',l:'Inflows',v:c,p:'+',c2:'pos'},{i:'↑',c:'out',l:'Outflows',v:e,p:'–',c2:'neg'},{i:'◎',c:'bal',l:'Net',v:n,p:n>=0?'+':'–',c2:n>=0?'pos':'neg'},{i:'⧗',c:'out',l:'Unbilled',v:o,p:'',c2:'neutral'}].map(r=>`<div class="wf-row"><div class="wf-row-icon ${r.c}">${r.i}</div><div class="wf-row-label">${r.l}</div><div class="wf-row-val ${r.c2}">${r.p}${fmt2(Math.abs(r.v))}</div></div>`).join('');}
+function updateCashFlow(){const col=MILESTONES.filter(m=>m.paid).reduce((s,m)=>s+m.amount,0),exp=getTotalActual(),net=col-exp,out=TOTAL_CONTRACT-col,cp=(col/TOTAL_CONTRACT*100).toFixed(1);const se=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};se('cf-collected',fmtS(col));se('cf-collected-pct',cp+'%');se('cf-outflows',fmtS(exp));se('cf-net',(net>=0?'+':'-')+fmtS(Math.abs(net)));const ne=document.getElementById('cf-net');if(ne)ne.className='kpi-value '+(net>=0?'pos':'neg');se('cf-outstanding',fmtS(out));se('cf-outstanding-pct',(100-parseFloat(cp)).toFixed(1)+'%');}
+function buildCashFlowLog(){const tb=document.getElementById('cashflow-tbody');if(!tb)return;let tx=[];MILESTONES.filter(m=>m.paid).forEach(m=>tx.push({date:m.paidDate,type:'IN',desc:m.label,inf:m.amount,out:0,st:'Received'}));expenses.forEach(e=>tx.push({date:e.date,type:'OUT',desc:(e.desc||e.code)+(e.supplier?' — '+e.supplier:''),inf:0,out:parseFloat(e.amount)||0,st:e.mode}));MILESTONES.filter(m=>!m.paid).forEach(m=>tx.push({date:'',type:'PEN',desc:m.label,inf:m.amount,out:0,st:'Pending'}));tx.sort((a,b)=>{if(a.type==='PEN'&&b.type!=='PEN')return 1;if(b.type==='PEN'&&a.type!=='PEN')return-1;if(a.date&&b.date)return a.date.localeCompare(b.date);return 0;});let bal=0;tb.innerHTML=tx.map(t=>{const ip=t.type==='PEN';if(!ip)bal+=t.inf-t.out;return`<tr style="${ip?'opacity:0.4':''}"><td style="color:var(--text3)">${t.date?formatDateShort(t.date):'–'}</td><td><span class="badge ${t.type==='IN'?'green':t.type==='OUT'?'red':'gray'}">${t.type==='IN'?'↓ IN':t.type==='OUT'?'↑ OUT':'⧗'}</span></td><td>${t.desc}</td><td class="tx-inflow">${t.inf>0?fmt2(t.inf):'–'}</td><td class="tx-outflow">${t.out>0?fmt2(t.out):'–'}</td><td class="tx-balance">${ip?'–':(bal>=0?'+':'')+fmt2(bal)}</td><td><span class="badge ${t.type==='IN'?'green':t.type==='OUT'?'orange':'gray'}">${t.st}</span></td></tr>`;}).join('');}
+
+function populateDropdowns(){const s=document.getElementById('exp-code');let lc='';COST_CODES_SELLING.forEach(c=>{if(c.cat!==lc){const o=document.createElement('optgroup');o.label=c.cat;s.appendChild(o);lc=c.cat;}const opt=document.createElement('option');opt.value=c.code;opt.textContent=c.code+' — '+c.desc;s.appendChild(opt);});}
+function buildExpenseList(){document.getElementById('expense-tbody').innerHTML=expenses.map((e,i)=>`<tr><td>${e.date}</td><td style="color:var(--accent3)">${e.code}</td><td>${e.desc}</td><td style="color:var(--text2)">${e.supplier}</td><td style="color:var(--accent)">₱${parseFloat(e.amount).toLocaleString()}</td><td>${e.mode}</td><td><span style="cursor:pointer;color:var(--danger)" onclick="deleteExpense(${i})">✕</span></td></tr>`).join('')||'<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:16px">No expenses</td></tr>';document.getElementById('exp-total-badge').textContent='Total: ₱'+getTotalActual().toLocaleString();updateKPIs();}
+function addExpense(){const d=document.getElementById('exp-date').value,c=document.getElementById('exp-code').value,desc=document.getElementById('exp-desc').value,s=document.getElementById('exp-supplier').value,a=parseFloat(document.getElementById('exp-amount').value)||0,m=document.getElementById('exp-payment').value,r=document.getElementById('exp-ref').value;if(!d||!a){alert('Enter date+amount.');return;}expenses.push({date:d,week:Math.ceil((expenses.length+1)/5),code:c,desc,supplier:s,amount:a,mode:m,ref:r});buildExpenseList();clearExpenseForm();updateCashFlow();autoSave();}
+function deleteExpense(i){if(confirm('Remove?')){expenses.splice(i,1);buildExpenseList();updateCashFlow();autoSave();}}
+function clearExpenseForm(){['exp-date','exp-desc','exp-supplier','exp-amount','exp-ref'].forEach(id=>document.getElementById(id).value='');}
+function updateKPIs(){buildDashboard();}
+function buildCompare(){const bm={};COST_CODES_BUDGET.forEach(c=>bm[c.code]=c.budget);const contractItems=COST_CODES_SELLING.filter(c=>!isInternalOnly(c));const tb=contractItems.reduce((s,c)=>s+(bm[c.code]||0),0),ts=getTotalSelling(),gp=ts-tb;document.getElementById('cmp-budget').textContent=fmtS(tb);document.getElementById('cmp-selling').textContent=fmtS(ts);document.getElementById('cmp-profit').textContent=fmtS(gp);document.getElementById('cmp-margin').textContent=(gp/ts*100).toFixed(1)+'%';let lc='';document.querySelector('#compare-table tbody').innerHTML=contractItems.map(c=>{const b=bm[c.code]||0,mk=c.budget-b,mp=b>0?(mk/b*100):0;let cr='';if(c.cat!==lc){cr=`<tr class="section-row"><td colspan="6">${c.cat}</td></tr>`;lc=c.cat;}return cr+`<tr><td style="color:var(--text3)">${c.code}</td><td>${c.desc}</td><td style="color:var(--accent)">₱${b.toLocaleString()}</td><td style="color:var(--accent2)">₱${c.budget.toLocaleString()}</td><td class="${mk>0?'pos':mk<0?'neg':'neutral'}">${mk>=0?'+':''}₱${Math.abs(mk).toLocaleString()}</td><td class="${mk>0?'pos':mk<0?'neg':'neutral'}">${mp.toFixed(1)}%</td></tr>`;}).join('');}
+
+// ============================================================
+// ACCESS CONTROL (Client vs Contractor mode)
+// ============================================================
+// ============================================================
+// ACCESS CONTROL (Client vs Contractor mode)
+// ============================================================
+let accessMode = 'client'; // 'client' or 'contractor'
+let PASSCODE = '0000';
+let CLIENT_PASSCODE = ''; // empty = no client passcode required
+let clientUnlocked = false; // tracks if client has entered their passcode
+
+function toggleAccessMode(){
+  if(accessMode === 'client'){
+    // Show passcode modal
+    document.getElementById('passcode-modal').classList.add('show');
+    document.getElementById('passcode-input').value='';
+    document.getElementById('passcode-error').textContent='';
+    setTimeout(()=>document.getElementById('passcode-input').focus(),100);
+  } else {
+    // Switch back to client mode
+    accessMode = 'client';
+    applyAccessMode();
+    // If on a contractor-only page, redirect to dashboard
+    const currentPage = document.querySelector('.page.active');
+    if(currentPage && currentPage.id !== 'page-dashboard' && currentPage.id !== 'page-gantt'){
+      const dashNav = document.querySelector('.nav-item.active');
+      showPage('dashboard', document.querySelectorAll('.nav-item')[1]);
+    }
+  }
+}
+
+function checkPasscode(){
+  const input = document.getElementById('passcode-input').value;
+  if(input === PASSCODE){
+    accessMode = 'contractor';
+    closeModal('passcode-modal');
+    applyAccessMode();
+  } else {
+    document.getElementById('passcode-error').textContent = 'Incorrect passcode. Try again.';
+    document.getElementById('passcode-input').classList.add('error');
+    setTimeout(()=>document.getElementById('passcode-input').classList.remove('error'),300);
+    document.getElementById('passcode-input').value='';
+    document.getElementById('passcode-input').focus();
+  }
+}
+
+function applyAccessMode(){
+  updateCommentUI();
+  const shell = document.getElementById('app-shell');
+  const banner = document.getElementById('access-banner');
+  const icon = document.getElementById('access-icon');
+  const label = document.getElementById('access-label');
+  const modeText = document.getElementById('access-mode-text');
+  
+  const saveBtn = document.getElementById('save-btn');
+  if(accessMode === 'contractor'){
+    shell.classList.remove('client-mode');
+    banner.className = 'access-banner contractor';
+    banner.innerHTML = '🔧 Contractor Mode — Full access enabled. <a href="#" onclick="toggleAccessMode();return false" style="color:var(--accent);text-decoration:underline">Switch to Client View</a>';
+    icon.textContent = '🔓';
+    label.textContent = 'Lock Access';
+    modeText.textContent = 'Contractor Mode';
+    modeText.style.color = 'var(--accent)';
+    if(saveBtn) saveBtn.style.display = 'inline-flex';
+  } else {
+    shell.classList.add('client-mode');
+    banner.className = 'access-banner client';
+    banner.innerHTML = '👁 Client View — Dashboard & Schedule only. <a href="#" onclick="toggleAccessMode();return false" style="color:var(--accent);text-decoration:underline">Contractor Login</a>';
+    icon.textContent = '🔒';
+    label.textContent = 'Contractor Login';
+    modeText.textContent = 'Client View';
+    modeText.style.color = 'var(--text3)';
+    if(saveBtn) saveBtn.style.display = 'none';
+  }
+}
+
+function onPasscodeSettingChange(){
+  PASSCODE = document.getElementById('set-passcode').value || '0000';
+  markUnsaved();
+}
+
+function markUnsaved(){
+  const badge = document.getElementById('unsaved-badge');
+  if(badge) badge.style.display = 'inline-flex';
+}
+
+function manualSave(){
+  saveState();
+  buildDashboard();
+  const badge = document.getElementById('unsaved-badge');
+  if(badge) badge.style.display = 'none';
+}
+
+function onClientPasscodeSettingChange(){
+  CLIENT_PASSCODE = document.getElementById('set-client-passcode').value || '';
+  // If passcode removed, unlock comments for everyone
+  if(!CLIENT_PASSCODE){ clientUnlocked = true; updateCommentUI(); }
+  autoSave();
+}
+
+function openClientPasscodeModal(){
+  // If no passcode set, just unlock directly
+  if(!CLIENT_PASSCODE){ clientUnlocked = true; updateCommentUI(); return; }
+  document.getElementById('client-passcode-modal').classList.add('show');
+  document.getElementById('client-passcode-input').value = '';
+  document.getElementById('client-passcode-error').textContent = '';
+  setTimeout(()=>document.getElementById('client-passcode-input').focus(), 100);
+}
+
+function checkClientPasscode(){
+  const val = document.getElementById('client-passcode-input').value;
+  if(val === CLIENT_PASSCODE || !CLIENT_PASSCODE){
+    clientUnlocked = true;
+    closeModal('client-passcode-modal');
+    updateCommentUI();
+  } else {
+    const inp = document.getElementById('client-passcode-input');
+    inp.classList.add('error');
+    document.getElementById('client-passcode-error').textContent = 'Incorrect passcode. Try again.';
+    setTimeout(()=>inp.classList.remove('error'), 300);
+    inp.value = ''; inp.focus();
+  }
+}
+
+function lockComments(){
+  clientUnlocked = false;
+  updateCommentUI();
+}
+
+function updateCommentUI(){
+  const isUnlocked = clientUnlocked || accessMode === 'contractor' || !CLIENT_PASSCODE;
+  const lockedBar = document.getElementById('comment-locked-bar');
+  const inputBar = document.getElementById('comment-input-bar');
+  const badge = document.getElementById('comment-unlock-badge');
+  if(!lockedBar || !inputBar) return;
+  if(isUnlocked){
+    lockedBar.style.display = 'none';
+    inputBar.style.display = 'flex';
+    if(badge) badge.style.display = 'inline-flex';
+  } else {
+    lockedBar.style.display = 'flex';
+    inputBar.style.display = 'none';
+    if(badge) badge.style.display = 'none';
+  }
+}
+
+function onDescChange(){
+  PROJECT.description = document.getElementById('set-project-desc').value || '';
+  markUnsaved();
+}
+
+function onPhotoUpload(input){
+  const file = input.files[0];
+  if(!file) return;
+  if(file.size > 10 * 1024 * 1024){ alert('Photo too large. Max 10MB.'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      // Compress: max 800px wide, JPEG at 65% quality
+      const MAX = 800;
+      let w = img.width, h = img.height;
+      if(w > MAX){ h = Math.round(h * MAX / w); w = MAX; }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      PROJECT.photo = canvas.toDataURL('image/jpeg', 0.65);
+      updatePhotoPreview();
+      markUnsaved();
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function removePhoto(){
+  PROJECT.photo = null;
+  updatePhotoPreview();
+  markUnsaved();
+}
+
+function updatePhotoPreview(){
+  const prev = document.getElementById('photo-preview');
+  const removeBtn = document.getElementById('remove-photo-btn');
+  if(!prev) return;
+  if(PROJECT.photo){
+    prev.style.backgroundImage = 'url(' + PROJECT.photo + ')';
+    prev.textContent = '';
+    if(removeBtn) removeBtn.style.display = 'inline-flex';
+  } else {
+    prev.style.backgroundImage = '';
+    prev.textContent = 'No photo';
+    if(removeBtn) removeBtn.style.display = 'none';
+  }
+}
+
+function resetSettingsOnly(){
+  if(!confirm('Reset project settings (title, dates, holidays, passcode)? Your expenses, schedule, budget and contract data will NOT be affected.')) return;
+  PROJECT.startDate = '2026-03-23';
+  PROJECT.workMode = 'construction';
+  PROJECT.totalDays = 45;
+  PROJECT.holidays = [];
+  PROJECT.locked = false;
+  PROJECT.photo = null;
+  PROJECT.description = '';
+  PASSCODE = '0000';
+  document.getElementById('set-start-date').value = PROJECT.startDate;
+  document.getElementById('set-work-mode').value = PROJECT.workMode;
+  document.getElementById('set-total-days').value = PROJECT.totalDays;
+  document.getElementById('set-passcode').value = PASSCODE;
+  const descEl = document.getElementById('set-project-desc');
+  if(descEl) descEl.value = '';
+  updatePhotoPreview();
+  buildDayDateMap();
+  renderHolidays();
+  autoSave();
+  alert('Settings reset successfully.');
+}
+
+// ============================================================
+// FIREBASE CONFIG — REPLACE WITH YOUR OWN VALUES
+// ============================================================
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyCcFhJFQsyUOrcbWrRsfT4IVc2Q_2RvMYU",
+  authDomain: "gin-gineer.firebaseapp.com",
+  databaseURL: "https://gin-gineer-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "gin-gineer",
+  storageBucket: "gin-gineer.firebasestorage.app",
+  messagingSenderId: "264023994326",
+  appId: "1:264023994326:web:3c58911167686ee305be77"
+};
+
+// Read project ID from URL — e.g. project.html?id=24bs
+const urlParams = new URLSearchParams(window.location.search);
+const PROJECT_ID = urlParams.get('id') || '24bs';
+const DB_PATH = 'projects/' + PROJECT_ID;
+let firebaseReady = false;
+let dbRef = null;
+let commentsRef = null;
+let metaRef = null;
+
+// Client comments data
+let clientComments = [];
+
+// ============================================================
+// SAVE / LOAD (Firebase + localStorage fallback)
+// ============================================================
+const SAVE_KEY = '24bs_project_data_' + PROJECT_ID + '_v3';
+
+function getStateObject() {
+  // Strip photo from main state — stored separately to keep sync fast
+  const projectWithoutPhoto = Object.assign({}, PROJECT, {photo: null});
+  return {
+    project: projectWithoutPhoto,
+    costCodesSelling: COST_CODES_SELLING,
+    costCodesBudget: COST_CODES_BUDGET,
+    schedule: SCHEDULE,
+    milestones: MILESTONES,
+    expenses,
+    variationOrders,
+    challenges,
+    budgetLocked,
+    scheduleLocked,
+    contractLocked,
+    contractCategories: CONTRACT_CATEGORIES,
+    projectTitle: document.getElementById('set-project-title').value,
+    passcode: PASSCODE,
+    clientPasscode: CLIENT_PASSCODE,
+    savedAt: new Date().toISOString()
+  };
+}
+
+function saveState() {
+  try {
+    const state = getStateObject();
+    // Build full state with photo for localStorage (local is fast, no size limit concern)
+    const localState = Object.assign({}, state, {
+      project: Object.assign({}, state.project, {
+        photo: PROJECT.photo || null,
+        description: PROJECT.description || ''
+      })
+    });
+    try {
+      localStorage.setItem(SAVE_KEY, JSON.stringify(localState));
+    } catch(e) {
+      // localStorage quota exceeded (photo too large) — save without photo
+      console.warn('localStorage quota exceeded, saving without photo');
+      const stateNoPhoto = Object.assign({}, localState, { project: Object.assign({}, localState.project, {photo: null}) });
+      localStorage.setItem(SAVE_KEY, JSON.stringify(stateNoPhoto));
+    }
+
+    // Save to Firebase — photo goes to a separate /photo node to avoid bloating every sync
+    if(firebaseReady && dbRef) {
+      dbRef.set(state).then(()=>{
+        flashSaved('☁ Synced');
+        // Save photo separately (only if changed, large payload)
+        if(PROJECT.photo && metaRef) {
+          metaRef.child('photo').set(PROJECT.photo).catch(e=>console.warn('Photo save failed:',e));
+        } else if(!PROJECT.photo && metaRef) {
+          metaRef.child('photo').remove();
+        }
+        // Sync key metrics for hub
+        if(metaRef) {
+          const tasks = SCHEDULE.filter(t=>!t.section);
+          const prog = tasks.length ? Math.round(tasks.reduce((s,t)=>s+(t.pctComplete||0),0)/tasks.length) : 0;
+          metaRef.update({
+            contractValue: getTotalSelling(),
+            progress: prog,
+            lastUpdated: new Date().toISOString()
+          });
+        }
+      }).catch(e => {
+        console.warn('Firebase save failed:', e);
+        flashSaved('✓ Local');
+      });
+    } else {
+      flashSaved('✓ Local');
+    }
+  } catch(e) { console.warn('Save failed:', e); }
+}
+
+function flashSaved(msg) {
+  const badge = document.getElementById('topbar-date');
+  if(badge) { const orig=badge.textContent; badge.textContent=msg; setTimeout(()=>{ badge.textContent=orig; },1000); }
+}
+
+function applyState(s) {
+  if(!s) return false;
+  try {
+    if(s.project) {
+      Object.assign(PROJECT, s.project);
+      document.getElementById('set-start-date').value = PROJECT.startDate;
+      document.getElementById('set-work-mode').value = PROJECT.workMode;
+      document.getElementById('set-total-days').value = PROJECT.totalDays;
+      if(PROJECT.locked) {
+        document.getElementById('set-start-date').disabled = true;
+        document.getElementById('set-work-mode').disabled = true;
+        document.getElementById('set-total-days').disabled = true;
+      }
+    }
+    if(s.costCodesSelling) { COST_CODES_SELLING.length=0; s.costCodesSelling.forEach(c=>COST_CODES_SELLING.push(c)); }
+    if(s.costCodesBudget) { COST_CODES_BUDGET.length=0; s.costCodesBudget.forEach(c=>COST_CODES_BUDGET.push(c)); }
+    if(s.schedule) {
+      SCHEDULE.length=0;
+      // Category name migration map (old roman numeral → costCat)
+      const sectionMigration={
+        'I. General Requirements':'General Requirements',
+        'II. Drywall / Partition':'Drywall / Doors & Windows',
+        'III. Ceiling Works':'Ceiling Works',
+        'IV. Carpentry Works':'Carpentry Works',
+        'V. Floor Finishes':'Floor Finishes',
+        'VI. Wall & Ceiling Finishes':'Wall Finishes',
+        'VII. Doors & Windows':'Drywall / Doors & Windows',
+        'VIII. Plumbing & Electrical':'Plumbing Works',
+      };
+      s.schedule.forEach(t=>{
+        if(t.section&&!t.costCat){
+          // Migrate old section name to new costCat format
+          t.costCat=sectionMigration[t.section]||t.section;
+          t.section=t.costCat;
+        }
+        SCHEDULE.push(t);
+      });
+      // Remove duplicate sections for same costCat (e.g. old VII. Doors & Windows merged into DW)
+      const seenCats=new Set();
+      for(let i=SCHEDULE.length-1;i>=0;i--){
+        if(SCHEDULE[i].section){
+          const cat=SCHEDULE[i].costCat||SCHEDULE[i].section;
+          if(seenCats.has(cat)){
+            // Merge tasks from this duplicate section into the first one
+            let j=i+1;
+            while(j<SCHEDULE.length&&!SCHEDULE[j].section){
+              const task=SCHEDULE.splice(j,1)[0];
+              // Find the first section with this cat and insert after its tasks
+              const firstSecIdx=SCHEDULE.findIndex(t=>t.section&&(t.costCat||t.section)===cat);
+              if(firstSecIdx>=0){
+                let ins=firstSecIdx+1;
+                while(ins<SCHEDULE.length&&!SCHEDULE[ins].section)ins++;
+                SCHEDULE.splice(ins,0,task);
+              }
+            }
+            SCHEDULE.splice(i,1);
+          } else {
+            seenCats.add(cat);
+          }
+        }
+      }
+    }
+    if(s.milestones) { s.milestones.forEach((m,i)=>{ if(MILESTONES[i]) Object.assign(MILESTONES[i], m); }); }
+    if(s.expenses) { expenses.length=0; s.expenses.forEach(e=>expenses.push(e)); }
+    if(s.variationOrders) { variationOrders.length=0; s.variationOrders.forEach(v=>variationOrders.push(v)); }
+    if(s.challenges) { challenges.length=0; s.challenges.forEach(c=>challenges.push(c)); }
+    if(typeof s.budgetLocked === 'boolean') budgetLocked = s.budgetLocked;
+    if(typeof s.scheduleLocked === 'boolean') scheduleLocked = s.scheduleLocked;
+    if(typeof s.contractLocked === 'boolean') contractLocked = s.contractLocked;
+    if(s.contractCategories) { CONTRACT_CATEGORIES.length=0; s.contractCategories.forEach(c=>CONTRACT_CATEGORIES.push(c)); }
+    if(s.projectTitle) {
+      document.getElementById('set-project-title').value = s.projectTitle;
+      document.getElementById('dash-project-title').textContent = s.projectTitle;
+      const nameEl = document.querySelector('.logo-badge .name');
+      if(nameEl) nameEl.textContent = s.projectTitle.length > 16 ? s.projectTitle.substring(0,16)+'…' : s.projectTitle;
+    }
+    if(s.project && s.project.photo) { PROJECT.photo = s.project.photo; updatePhotoPreview(); }
+    if(s.project && s.project.description) {
+      PROJECT.description = s.project.description;
+      const descEl = document.getElementById('set-project-desc');
+      if(descEl) descEl.value = PROJECT.description;
+    }
+    if(s.passcode) {
+      PASSCODE = s.passcode;
+      const pcEl = document.getElementById('set-passcode');
+      if(pcEl) pcEl.value = PASSCODE;
+    }
+    if(s.clientPasscode !== undefined) {
+      CLIENT_PASSCODE = s.clientPasscode || '';
+      const cpEl = document.getElementById('set-client-passcode');
+      if(cpEl) cpEl.value = CLIENT_PASSCODE;
+    }
+    TOTAL_CONTRACT = getTotalSelling();
+    return true;
+  } catch(e) { console.warn('Apply state failed:', e); return false; }
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if(!raw) return false;
+    return applyState(JSON.parse(raw));
+  } catch(e) { return false; }
+}
+
+function clearSavedData() {
+  if(!confirm('This will permanently delete all saved progress and reset to defaults. Are you sure?')) return;
+  localStorage.removeItem(SAVE_KEY);
+  if(firebaseReady && dbRef) dbRef.remove();
+  if(firebaseReady && commentsRef) commentsRef.remove();
+  location.reload();
+}
+
+// Auto-save after any data change (debounced)
+let _saveTimer = null;
+function autoSave() { clearTimeout(_saveTimer); _saveTimer = setTimeout(saveState, 500); }
+
+// ============================================================
+// FIREBASE INITIALIZATION
+// ============================================================
+function initFirebase() {
+  if(FIREBASE_CONFIG.apiKey === 'YOUR_API_KEY_HERE') {
+    console.log('Firebase not configured — using localStorage only.');
+    document.getElementById('sync-status').textContent = 'Offline (Local)';
+    document.getElementById('sync-status').style.color = 'var(--text3)';
+    return;
+  }
+  try {
+    firebase.initializeApp(FIREBASE_CONFIG);
+    const db = firebase.database();
+    dbRef = db.ref(DB_PATH + '/data');
+    commentsRef = db.ref(DB_PATH + '/comments');
+    metaRef = db.ref(DB_PATH + '/meta');
+    firebaseReady = true;
+
+    document.getElementById('sync-status').textContent = '☁ Live';
+    document.getElementById('sync-status').style.color = 'var(--accent3)';
+
+    // Listen for real-time data changes (for client viewers)
+    dbRef.on('value', (snapshot) => {
+      try {
+        const data = snapshot.val();
+        if(data && accessMode === 'client') {
+          applyState(data);
+          refreshAllViews();
+        }
+      } catch(e) { console.warn('Live update error:', e); }
+    });
+
+    // Listen for comments
+    commentsRef.on('value', (snapshot) => {
+      const data = snapshot.val();
+      clientComments = data ? Object.values(data) : [];
+      renderComments();
+    });
+
+    // If Firebase has data, load it over localStorage
+    dbRef.once('value').then(snapshot => {
+      const data = snapshot.val();
+      if(data) {
+        applyState(data);
+        refreshAllViews();
+        // Restore photo from old embedded location if present
+        if(data.project && data.project.photo && !PROJECT.photo) {
+          PROJECT.photo = data.project.photo;
+          updatePhotoPreview();
+          buildDashboard();
+        }
+        console.log('Loaded from Firebase (live)');
+      }
+      // Load photo from separate node (non-blocking)
+      if(metaRef) return metaRef.child('photo').once('value');
+      return Promise.resolve(null);
+    }).then(photoSnap => {
+      if(!photoSnap) return;
+      const photo = photoSnap.val();
+      if(photo) {
+        PROJECT.photo = photo;
+        updatePhotoPreview();
+        buildDashboard();
+      }
+    }).catch(e => {
+      console.warn('Firebase load error:', e);
+    });
+
+  } catch(e) {
+    console.warn('Firebase init failed:', e);
+    document.getElementById('sync-status').textContent = 'Offline';
+    document.getElementById('sync-status').style.color = 'var(--danger)';
+  }
+}
+
+function refreshAllViews() {
+  buildDayDateMap();
+  populateDropdowns();
+  buildExpenseList();
+  buildDashboard();
+  renderHolidays();
+  updateBudgetLockUI();
+  applyAccessMode();
+}
+
+// ============================================================
+// CLIENT COMMENTS & APPROVALS
+// ============================================================
+function addComment() {
+  const text = document.getElementById('comment-input').value.trim();
+  if(!text) return;
+  const comment = {
+    id: Date.now().toString(),
+    text,
+    author: accessMode === 'contractor' ? '🔧 Contractor' : '👤 Client',
+    date: new Date().toISOString(),
+    type: 'comment'
+  };
+  if(firebaseReady && commentsRef) {
+    commentsRef.push(comment);
+  } else {
+    clientComments.push(comment);
+    renderComments();
+  }
+  document.getElementById('comment-input').value = '';
+  autoSave();
+}
+
+function addApproval(note) {
+  const comment = {
+    id: Date.now().toString(),
+    text: note || 'Approved ✓',
+    author: '👤 Client',
+    date: new Date().toISOString(),
+    type: 'approval'
+  };
+  if(firebaseReady && commentsRef) {
+    commentsRef.push(comment);
+  } else {
+    clientComments.push(comment);
+    renderComments();
+  }
+  autoSave();
+}
+
+function renderComments() {
+  const el = document.getElementById('comments-list');
+  if(!el) return;
+  if(!clientComments.length) {
+    el.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3);font-size:11px">No comments yet</div>';
+    return;
+  }
+  el.innerHTML = clientComments.slice().reverse().map(c => {
+    const d = new Date(c.date);
+    const timeStr = d.toLocaleDateString('en-PH',{month:'short',day:'numeric'}) + ' ' + d.toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit'});
+    const isApproval = c.type === 'approval';
+    return `<div style="padding:12px 16px;border-bottom:1px solid var(--border)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <span style="font-size:11px;font-weight:600;color:${c.author.includes('Contractor')?'var(--accent)':'var(--accent3)'}">${c.author}</span>
+        <span style="font-size:9px;color:var(--text3)">${timeStr}</span>
+      </div>
+      <div style="font-size:12px;color:${isApproval?'var(--accent3)':'var(--text)'}">${isApproval?'✅ ':''} ${c.text}</div>
+    </div>`;
+  }).join('');
+}
+
+// INIT
+const hadSave = loadState();
+buildDayDateMap();
+populateDropdowns();
+buildExpenseList();
+buildDashboard();
+renderHolidays();
+document.getElementById('exp-date').value=new Date().toISOString().split('T')[0];
+updateBudgetLockUI();
+applyAccessMode();
+updateCommentUI();
+renderComments();
+
+// Initialize Firebase after DOM is ready
+if(typeof firebase !== 'undefined') {
+  initFirebase();
+} else {
+  // Firebase SDK not loaded — try loading dynamically
+  const fbScript = document.createElement('script');
+  fbScript.src = 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js';
+  fbScript.onload = () => {
+    const dbScript = document.createElement('script');
+    dbScript.src = 'https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js';
+    dbScript.onload = () => initFirebase();
+    document.head.appendChild(dbScript);
+  };
+  document.head.appendChild(fbScript);
+}
+
+if(hadSave) console.log('Project data restored from localStorage');
+</script>
+</body>
+</html>
