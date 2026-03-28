@@ -206,6 +206,16 @@ canvas { width: 100% !important; }
     <button id="save-btn" class="btn btn-success contractor-only" onclick="manualSave()" style="padding:8px 16px;font-size:11px;display:none">💾 Save</button>
   </div><div class="topbar-meta"><span class="status-pill"><span class="dot"></span> <span id="topbar-status">In Progress</span></span><span class="date-badge" id="topbar-date"></span></div></header>
     <div class="access-banner client" id="access-banner">👁 Client View — Dashboard & Schedule only. <a href="#" onclick="toggleAccessMode();return false" style="color:var(--accent);text-decoration:underline">Contractor Login</a></div>
+    <!-- Award Status Bar (contractor only) -->
+    <div id="award-bar" class="contractor-only" style="display:none;padding:10px 28px;background:var(--bg2);border-bottom:1px solid var(--border);align-items:center;gap:14px;flex-wrap:wrap">
+      <span style="font-size:11px;color:var(--text3)">Bid Status:</span>
+      <span id="award-status-badge" style="font-size:12px;font-weight:600"></span>
+      <div style="display:flex;gap:8px;margin-left:auto">
+        <button class="btn btn-success" onclick="setAwardStatus('active')" style="padding:7px 14px;font-size:11px" id="btn-award">✅ Mark as Awarded</button>
+        <button class="btn btn-danger" onclick="setAwardStatus('lost')" style="padding:7px 14px;font-size:11px" id="btn-lost">✗ Not Awarded</button>
+        <button class="btn btn-ghost" onclick="setAwardStatus('pending')" style="padding:7px 14px;font-size:11px" id="btn-pending">⟲ Reset to Pending</button>
+      </div>
+    </div>
     <div class="content">
 
       <!-- SETTINGS PAGE -->
@@ -1522,6 +1532,7 @@ function buildDashSCurve(){
 // CONTRACT SETUP
 // ============================================================
 let contractLocked = false;
+let awardStatus = 'pending'; // 'pending' | 'active' | 'lost'
 
 // Default categories with prefixes
 const CONTRACT_CATEGORIES = [
@@ -1727,9 +1738,9 @@ function toggleContractLock(){
     if(total<=0){alert('Contract has no value. Add line items with amounts first.');return;}
     if(!confirm('Lock contract at ₱'+total.toLocaleString()+'? This will finalize line items and push to Budget Monitoring & Gantt.')) return;
     contractLocked=true;
-    // Push: remove items with 0 selling from non-manpower (cleanup)
-    // Rebuild schedule from contract items
     rebuildScheduleFromContract();
+    // Immediately sync contract value to hub meta
+    if(firebaseReady && metaRef) metaRef.update({contractValue: total, lastUpdated: new Date().toISOString()});
   } else {
     if(!confirm('Unlock contract? This allows editing line items and amounts again.')) return;
     contractLocked=false;
@@ -2005,6 +2016,7 @@ function applyAccessMode(){
   const modeText = document.getElementById('access-mode-text');
   
   const saveBtn = document.getElementById('save-btn');
+  const awardBar = document.getElementById('award-bar');
   if(accessMode === 'contractor'){
     shell.classList.remove('client-mode');
     banner.className = 'access-banner contractor';
@@ -2014,6 +2026,8 @@ function applyAccessMode(){
     modeText.textContent = 'Contractor Mode';
     modeText.style.color = 'var(--accent)';
     if(saveBtn) saveBtn.style.display = 'inline-flex';
+    if(awardBar) awardBar.style.display = 'flex';
+    updateAwardBar();
   } else {
     shell.classList.add('client-mode');
     banner.className = 'access-banner client';
@@ -2023,6 +2037,7 @@ function applyAccessMode(){
     modeText.textContent = 'Client View';
     modeText.style.color = 'var(--text3)';
     if(saveBtn) saveBtn.style.display = 'none';
+    if(awardBar) awardBar.style.display = 'none';
   }
 }
 
@@ -2034,6 +2049,42 @@ function onPasscodeSettingChange(){
 function markUnsaved(){
   const badge = document.getElementById('unsaved-badge');
   if(badge) badge.style.display = 'inline-flex';
+}
+
+function updateAwardBar(){
+  const badge = document.getElementById('award-status-badge');
+  const btnAward = document.getElementById('btn-award');
+  const btnLost = document.getElementById('btn-lost');
+  const btnPending = document.getElementById('btn-pending');
+  if(!badge) return;
+  const map = {
+    pending: {label:'⏳ Pending Award', color:'var(--accent2)', showAward:true, showLost:true, showPending:false},
+    active:  {label:'✅ Awarded — Active', color:'var(--accent3)', showAward:false, showLost:true, showPending:true},
+    lost:    {label:'✗ Not Awarded', color:'var(--danger)', showAward:true, showLost:false, showPending:true},
+  };
+  const cfg = map[awardStatus] || map.pending;
+  badge.textContent = cfg.label;
+  badge.style.color = cfg.color;
+  if(btnAward) btnAward.style.display = cfg.showAward ? 'inline-flex' : 'none';
+  if(btnLost)  btnLost.style.display  = cfg.showLost  ? 'inline-flex' : 'none';
+  if(btnPending) btnPending.style.display = cfg.showPending ? 'inline-flex' : 'none';
+}
+
+function setAwardStatus(status){
+  const labels = {active:'Awarded', lost:'Not Awarded', pending:'Pending Award'};
+  if(!confirm('Mark this project as "'+labels[status]+'"?')) return;
+  awardStatus = status;
+  updateAwardBar();
+  // Sync to Firebase meta immediately
+  if(firebaseReady && metaRef) {
+    const update = { status: status, lastUpdated: new Date().toISOString() };
+    // If awarded, sync contract value too
+    if(status === 'active') {
+      update.contractValue = getTotalSelling();
+    }
+    metaRef.update(update).then(() => flashSaved('☁ Status synced'));
+  }
+  autoSave();
 }
 
 function manualSave(){
@@ -2176,6 +2227,7 @@ function getStateObject() {
     projectTitle: document.getElementById('set-project-title').value,
     passcode: PASSCODE,
     clientPasscode: CLIENT_PASSCODE,
+    awardStatus: awardStatus,
     savedAt: new Date().toISOString()
   };
 }
@@ -2195,12 +2247,15 @@ function saveState() {
         if(metaRef) {
           const tasks = SCHEDULE.filter(t=>!t.section);
           const prog = tasks.length ? Math.round(tasks.reduce((s,t)=>s+(t.pctComplete||0),0)/tasks.length) : 0;
-          metaRef.update({
-            contractValue: getTotalSelling(),
+          // Only sync contract value if contract is locked (authoritative)
+          const syncedContractValue = contractLocked ? getTotalSelling() : undefined;
+          const metaUpdate = {
             progress: prog,
-            lastUpdated: new Date().toISOString()
-          });
-          // Clean up any old large photo stored in Firebase
+            lastUpdated: new Date().toISOString(),
+            status: awardStatus
+          };
+          if(syncedContractValue !== undefined) metaUpdate.contractValue = syncedContractValue;
+          metaRef.update(metaUpdate);
           metaRef.child('photo').remove().catch(()=>{});
         }
         // Also clean up photo from old data location if present
@@ -2289,6 +2344,7 @@ function applyState(s) {
     if(typeof s.budgetLocked === 'boolean') budgetLocked = s.budgetLocked;
     if(typeof s.scheduleLocked === 'boolean') scheduleLocked = s.scheduleLocked;
     if(typeof s.contractLocked === 'boolean') contractLocked = s.contractLocked;
+    if(s.awardStatus) { awardStatus = s.awardStatus; updateAwardBar(); }
     if(s.contractCategories) { CONTRACT_CATEGORIES.length=0; s.contractCategories.forEach(c=>CONTRACT_CATEGORIES.push(c)); }
     if(s.projectTitle) {
       document.getElementById('set-project-title').value = s.projectTitle;
