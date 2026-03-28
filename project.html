@@ -207,7 +207,7 @@ canvas { width: 100% !important; }
   </div><div class="topbar-meta"><span class="status-pill"><span class="dot"></span> <span id="topbar-status">In Progress</span></span><span class="date-badge" id="topbar-date"></span></div></header>
     <div class="access-banner client" id="access-banner">👁 Client View — Dashboard & Schedule only. <a href="#" onclick="toggleAccessMode();return false" style="color:var(--accent);text-decoration:underline">Contractor Login</a></div>
     <!-- Award Status Bar (contractor only) -->
-    <div id="award-bar" class="contractor-only" style="display:none;padding:10px 28px;background:var(--bg2);border-bottom:1px solid var(--border);align-items:center;gap:14px;flex-wrap:wrap">
+    <div id="award-bar" style="display:none;padding:10px 28px;background:var(--bg2);border-bottom:1px solid var(--border);align-items:center;gap:14px;flex-wrap:wrap">
       <span style="font-size:11px;color:var(--text3)">Bid Status:</span>
       <span id="award-status-badge" style="font-size:12px;font-weight:600"></span>
       <div style="display:flex;gap:8px;margin-left:auto">
@@ -1452,8 +1452,9 @@ function buildDashboard(){
 
   document.getElementById('dash-scope-tbody').innerHTML=rows;
 
-  // Build S-Curve — defer slightly so canvas is visible/sized
-  setTimeout(buildDashSCurve, 50);
+  // Build S-Curve — debounced to prevent multiple renders stacking
+  if(window._scurveTimer) clearTimeout(window._scurveTimer);
+  window._scurveTimer = setTimeout(buildDashSCurve, 80);
 }
 
 let dashDonuts={};
@@ -1958,7 +1959,19 @@ function buildExpenseList(){document.getElementById('expense-tbody').innerHTML=e
 function addExpense(){const d=document.getElementById('exp-date').value,c=document.getElementById('exp-code').value,desc=document.getElementById('exp-desc').value,s=document.getElementById('exp-supplier').value,a=parseFloat(document.getElementById('exp-amount').value)||0,m=document.getElementById('exp-payment').value,r=document.getElementById('exp-ref').value;if(!d||!a){alert('Enter date+amount.');return;}expenses.push({date:d,week:Math.ceil((expenses.length+1)/5),code:c,desc,supplier:s,amount:a,mode:m,ref:r});buildExpenseList();clearExpenseForm();updateCashFlow();autoSave();}
 function deleteExpense(i){if(confirm('Remove?')){expenses.splice(i,1);buildExpenseList();updateCashFlow();autoSave();}}
 function clearExpenseForm(){['exp-date','exp-desc','exp-supplier','exp-amount','exp-ref'].forEach(id=>document.getElementById(id).value='');}
-function updateKPIs(){buildDashboard();}
+function updateKPIs(){
+  // Only update KPI numbers — don't trigger full dashboard rebuild
+  const bt=getTotalSelling();
+  const el=document.getElementById('dash-contract');
+  if(el){
+    el.textContent='₱'+(bt/1e6).toFixed(2)+'M';
+    el.style.color=contractLocked?'var(--accent)':'var(--accent2)';
+  }
+  const sub=document.getElementById('dash-contract-sub');
+  if(sub) sub.innerHTML=contractLocked
+    ? fmtS(bt)+' · VAT Excl. <span style="color:var(--accent3);margin-left:4px">🔒 Locked</span>'
+    : (bt>0?fmtS(bt)+' · ':'')+'<span style="color:var(--accent2)">⚠ Contract not yet locked</span>';
+}
 function buildCompare(){const bm={};COST_CODES_BUDGET.forEach(c=>bm[c.code]=c.budget);const contractItems=COST_CODES_SELLING.filter(c=>!isInternalOnly(c));const tb=contractItems.reduce((s,c)=>s+(bm[c.code]||0),0),ts=getTotalSelling(),gp=ts-tb;document.getElementById('cmp-budget').textContent=fmtS(tb);document.getElementById('cmp-selling').textContent=fmtS(ts);document.getElementById('cmp-profit').textContent=fmtS(gp);document.getElementById('cmp-margin').textContent=(gp/ts*100).toFixed(1)+'%';let lc='';document.querySelector('#compare-table tbody').innerHTML=contractItems.map(c=>{const b=bm[c.code]||0,mk=c.budget-b,mp=b>0?(mk/b*100):0;let cr='';if(c.cat!==lc){cr=`<tr class="section-row"><td colspan="6">${c.cat}</td></tr>`;lc=c.cat;}return cr+`<tr><td style="color:var(--text3)">${c.code}</td><td>${c.desc}</td><td style="color:var(--accent)">₱${b.toLocaleString()}</td><td style="color:var(--accent2)">₱${c.budget.toLocaleString()}</td><td class="${mk>0?'pos':mk<0?'neg':'neutral'}">${mk>=0?'+':''}₱${Math.abs(mk).toLocaleString()}</td><td class="${mk>0?'pos':mk<0?'neg':'neutral'}">${mp.toFixed(1)}%</td></tr>`;}).join('');}
 
 // ============================================================
@@ -2453,10 +2466,12 @@ function refreshAllViews() {
   buildDayDateMap();
   populateDropdowns();
   buildExpenseList();
-  buildDashboard();
   renderHolidays();
   updateBudgetLockUI();
   applyAccessMode();
+  // Only rebuild dashboard if it's currently active
+  const dashPage = document.getElementById('page-dashboard');
+  if(dashPage && dashPage.classList.contains('active')) buildDashboard();
 }
 
 // ============================================================
