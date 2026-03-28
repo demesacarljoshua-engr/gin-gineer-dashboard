@@ -232,7 +232,9 @@ function lockHub(){
 
 function initFirebase(){
   try{
-    firebase.initializeApp(FIREBASE_CONFIG);
+    // Prevent "app already exists" error on back navigation
+    let app;
+    try { app = firebase.app(); } catch(e) { app = firebase.initializeApp(FIREBASE_CONFIG); }
     const db=firebase.database();
     hubRef=db.ref('hub');
     projectsRef=db.ref('projects');
@@ -243,6 +245,11 @@ function initFirebase(){
         if(s.passcode) MASTER_PASSCODE=s.passcode;
         if(s.firmName){FIRM_NAME=s.firmName;document.getElementById('firm-name-display').textContent=s.firmName;}
       }
+      if(sessionStorage.getItem('gg_unlocked')==='1'){
+        document.getElementById('lock-screen').style.display='none';
+        document.getElementById('app').style.display='block';
+      }
+    }).catch(()=>{
       if(sessionStorage.getItem('gg_unlocked')==='1'){
         document.getElementById('lock-screen').style.display='none';
         document.getElementById('app').style.display='block';
