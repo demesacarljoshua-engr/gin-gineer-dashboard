@@ -2323,15 +2323,16 @@ function autoSave() { clearTimeout(_saveTimer); _saveTimer = setTimeout(saveStat
 // ============================================================
 function initFirebase() {
   if(FIREBASE_CONFIG.apiKey === 'YOUR_API_KEY_HERE') {
-    console.log('Firebase not configured — using localStorage only.');
     document.getElementById('sync-status').textContent = 'Offline (Local)';
-    document.getElementById('sync-status').style.color = 'var(--text3)';
     return;
   }
   try {
-    // Handle "app already exists" on back navigation
-    try { firebase.app(); } catch(e) { firebase.initializeApp(FIREBASE_CONFIG); }
-    const db = firebase.database();
+    // Get or create Firebase app
+    let app;
+    try { app = firebase.app(); }
+    catch(e) { app = firebase.initializeApp(FIREBASE_CONFIG); }
+
+    const db = firebase.database(app);
     dbRef = db.ref(DB_PATH + '/data');
     commentsRef = db.ref(DB_PATH + '/comments');
     metaRef = db.ref(DB_PATH + '/meta');
@@ -2359,8 +2360,8 @@ function initFirebase() {
     });
 
     // Load hub settings for passcode (needed for contractor login on any project)
-    const db2 = firebase.database();
-    db2.ref('hub/settings').once('value').then(hsnap => {
+    const db3 = firebase.database(app);
+    db3.ref('hub/settings').once('value').then(hsnap => {
       const hs = hsnap.val();
       if(hs && hs.passcode) {
         PASSCODE = hs.passcode;
