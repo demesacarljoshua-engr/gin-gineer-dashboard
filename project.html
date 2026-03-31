@@ -682,6 +682,8 @@ canvas { width: 100% !important; }
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/3.0.1/chartjs-plugin-annotation.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 "use strict";
 // ============================================================
@@ -2507,21 +2509,8 @@ applyAccessMode();
 updateCommentUI();
 renderComments();
 
-// Initialize Firebase after DOM is ready
-if(typeof firebase !== 'undefined') {
-  initFirebase();
-} else {
-  // Firebase SDK not loaded — try loading dynamically
-  const fbScript = document.createElement('script');
-  fbScript.src = 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js';
-  fbScript.onload = () => {
-    const dbScript = document.createElement('script');
-    dbScript.src = 'https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js';
-    dbScript.onload = () => initFirebase();
-    document.head.appendChild(dbScript);
-  };
-  document.head.appendChild(fbScript);
-}
+// Initialize Firebase
+initFirebase();
 
 if(hadSave) console.log('Project data restored from localStorage');
 </script>
