@@ -2327,12 +2327,9 @@ function initFirebase() {
     return;
   }
   try {
-    // Get or create Firebase app
-    let app;
-    try { app = firebase.app(); }
-    catch(e) { app = firebase.initializeApp(FIREBASE_CONFIG); }
+    try { firebase.initializeApp(FIREBASE_CONFIG); } catch(e) { /* app already exists - ok */ }
 
-    const db = firebase.database(app);
+    const db = firebase.database();
     dbRef = db.ref(DB_PATH + '/data');
     commentsRef = db.ref(DB_PATH + '/comments');
     metaRef = db.ref(DB_PATH + '/meta');
@@ -2360,7 +2357,7 @@ function initFirebase() {
     });
 
     // Load hub settings for passcode (needed for contractor login on any project)
-    const db3 = firebase.database(app);
+    const db3 = firebase.database();
     db3.ref('hub/settings').once('value').then(hsnap => {
       const hs = hsnap.val();
       if(hs && hs.passcode) {
@@ -2403,9 +2400,9 @@ function initFirebase() {
     }).catch(e => { console.warn('Firebase load error:', e); });
 
   } catch(e) {
-    console.warn('Firebase init failed:', e);
-    document.getElementById('sync-status').textContent = 'Offline';
-    document.getElementById('sync-status').style.color = 'var(--danger)';
+    console.error('Firebase init failed:', e);
+    const ss = document.getElementById('sync-status');
+    if(ss) { ss.textContent = '⚠ ' + e.message; ss.style.color = 'var(--danger)'; }
   }
 }
 
