@@ -193,7 +193,7 @@ canvas { width: 100% !important; }
         </div>
       </div>
     </nav>
-    <div class="sidebar-footer"><div class="project-tag"><div class="label">Contract</div><div class="value" id="sidebar-contract">₱3,126,515.20</div><div class="label" style="margin-top:6px">Duration</div><div class="value" id="sidebar-dur">45 Working Days</div></div></div>
+    <div class="sidebar-footer"><div class="project-tag"><div class="label">Contract</div><div class="value" id="sidebar-contract">₱0</div><div class="label" style="margin-top:6px">Duration</div><div class="value" id="sidebar-dur">45 Working Days</div></div></div>
   </aside>
   <div class="main">
     <header class="topbar">
@@ -224,7 +224,7 @@ canvas { width: 100% !important; }
         <div class="settings-grid" style="grid-template-columns:1fr 1fr">
           <div class="settings-card" style="grid-column:1/-1">
             <label>Project Title</label>
-            <input type="text" id="set-project-title" value="24 Bakeshop Store / HQ" oninput="onTitleChange()">
+            <input type="text" id="set-project-title" value="" oninput="onTitleChange()">
           </div>
           <div class="settings-card" style="grid-column:1/-1">
             <label>Project Description (shown on dashboard)</label>
@@ -327,7 +327,7 @@ canvas { width: 100% !important; }
             <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap">
               <div style="flex:1;min-width:0">
                 <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.12em;margin-bottom:5px">Active Project</div>
-                <h2 id="dash-project-title" style="font-family:Syne,sans-serif;font-weight:700;font-size:20px;margin-bottom:3px;line-height:1.2">24 Bakeshop Store / HQ</h2>
+                <h2 id="dash-project-title" style="font-family:Syne,sans-serif;font-weight:700;font-size:20px;margin-bottom:3px;line-height:1.2">New Project</h2>
                 <p id="dash-prepared-by" style="font-size:11px;color:var(--text3);margin-bottom:0">Prepared by: Carl Joshua E. De Mesa, Licensed Engineer</p>
                 <p id="dash-project-desc" style="font-size:12px;color:var(--text2);margin-top:8px;line-height:1.65;display:none"></p>
               </div>
@@ -377,7 +377,7 @@ canvas { width: 100% !important; }
               <span style="color:#29b6f6">▼ Today</span>
             </div>
           </div>
-          <div class="panel-body" style="padding:14px"><div style="position:relative;height:220px"><canvas id="dash-scurve-chart"></canvas></div></div>
+          <div class="panel-body" style="padding:14px"><div style="position:relative;height:220px"><canvas id="dash-scurve-chart" style="pointer-events:none"></canvas></div></div>
         </div>
         <!-- Contractor-only donuts -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px" class="contractor-only">
@@ -688,7 +688,7 @@ canvas { width: 100% !important; }
 // PROJECT SETTINGS
 // ============================================================
 let PROJECT = {
-  startDate: '2026-03-23',
+  startDate: '2026-03-31',
   workMode: 'construction', // 'office' = Mon-Fri, 'construction' = Mon-Sat
   totalDays: 45,
   holidays: [],
@@ -785,72 +785,19 @@ function fmtS(v) { return '₱' + v.toLocaleString('en', {maximumFractionDigits:
 function fmt2(v) { return '₱' + Math.abs(v).toLocaleString('en', {minimumFractionDigits:2, maximumFractionDigits:2}); }
 
 // ============================================================
-// DATA
+// DATA — starts empty, loaded from Firebase per project ID
 // ============================================================
-let TOTAL_CONTRACT = 3126515.20;
+let TOTAL_CONTRACT = 0;
 const MILESTONES = [
-  {id:1,label:'Downpayment',trigger:'Upon signing',pct:'50%',amount:1563257.60,day:'Day 0',notes:'Before mobilization',color:'#4fc3a1',bg:'rgba(79,195,161,0.1)',bd:'rgba(79,195,161,0.3)',paid:false,paidDate:''},
-  {id:2,label:'1st Progress',trigger:'50% — Day 22',pct:'20%',amount:625303.04,day:'Day 22',notes:'Cumul 70%',color:'#f5c842',bg:'rgba(245,200,66,0.1)',bd:'rgba(245,200,66,0.3)',paid:false,paidDate:''},
-  {id:3,label:'2nd Progress',trigger:'75% — Day 34',pct:'20%',amount:625303.04,day:'Day 34',notes:'Cumul 90%',color:'#e8843a',bg:'rgba(232,132,58,0.1)',bd:'rgba(232,132,58,0.3)',paid:false,paidDate:''},
-  {id:4,label:'Final',trigger:'Day 45',pct:'10%',amount:312651.52,day:'Day 45',notes:'Turnover',color:'#7c6aff',bg:'rgba(124,106,255,0.1)',bd:'rgba(124,106,255,0.3)',paid:false,paidDate:''}
+  {id:1,label:'Downpayment',trigger:'Upon signing',pct:'30%',amount:0,day:'Day 0',notes:'Before mobilization',color:'#4fc3a1',bg:'rgba(79,195,161,0.1)',bd:'rgba(79,195,161,0.3)',paid:false,paidDate:''},
+  {id:2,label:'1st Progress',trigger:'50% complete',pct:'25%',amount:0,day:'Day 0',notes:'',color:'#f5c842',bg:'rgba(245,200,66,0.1)',bd:'rgba(245,200,66,0.3)',paid:false,paidDate:''},
+  {id:3,label:'2nd Progress',trigger:'75% complete',pct:'25%',amount:0,day:'Day 0',notes:'',color:'#e8843a',bg:'rgba(232,132,58,0.1)',bd:'rgba(232,132,58,0.3)',paid:false,paidDate:''},
+  {id:4,label:'Final',trigger:'Turnover',pct:'20%',amount:0,day:'Day 0',notes:'',color:'#7c6aff',bg:'rgba(124,106,255,0.1)',bd:'rgba(124,106,255,0.3)',paid:false,paidDate:''}
 ];
 
-const COST_CODES_SELLING = [
-  {cat:'General Requirements',code:'GR-001',desc:'Mobilization',budget:150000,selling:150000},
-  {cat:'General Requirements',code:'GR-002',desc:'Supervision',budget:250000,selling:250000},
-  {cat:'General Requirements',code:'GR-003',desc:'Temporary Facilities',budget:75000,selling:75000},
-  {cat:'General Requirements',code:'GR-004',desc:'Hauling',budget:50000,selling:50000},
-  {cat:'General Requirements',code:'GR-005',desc:'Demobilization',budget:50000,selling:50000},
-  {cat:'Drywall / Doors & Windows',code:'DW-001',desc:'Gypsum Board on Metal Studs',budget:366795,selling:366795},
-  {cat:'Drywall / Doors & Windows',code:'DW-002',desc:'Fiber Cement Ext. Partition',budget:90610,selling:90610},
-  {cat:'Drywall / Doors & Windows',code:'DW-003',desc:'CHB Zocalo',budget:35750,selling:35750},
-  {cat:'Drywall / Doors & Windows',code:'DW-004',desc:'Plant Box',budget:26910,selling:26910},
-  {cat:'Ceiling Works',code:'CW-001',desc:'Internal Ceiling / Custom',budget:147092,selling:147092},
-  {cat:'Ceiling Works',code:'CW-002',desc:'Plain Ceiling',budget:13229,selling:13229},
-  {cat:'Carpentry Works',code:'CP-001',desc:'Bar Counter w/ Laminate Top',budget:305500,selling:305500},
-  {cat:'Carpentry Works',code:'CP-002',desc:'Curved Cupboards',budget:136500,selling:136500},
-  {cat:'Carpentry Works',code:'CP-003',desc:'Mini Open Shelving',budget:54600,selling:54600},
-  {cat:'Carpentry Works',code:'CP-004',desc:'Brass Wall Finish',budget:175500,selling:175500},
-  {cat:'Carpentry Works',code:'CP-005',desc:'Bench w/ Tables (Interior)',budget:169000,selling:169000},
-  {cat:'Carpentry Works',code:'CP-006',desc:'Bench Exterior w/ Tables',budget:41600,selling:41600},
-  {cat:'Carpentry Works',code:'CP-007',desc:'Open Shelving - Staff Storage',budget:61100,selling:61100},
-  {cat:'Carpentry Works',code:'CP-008',desc:'Office Console',budget:19500,selling:19500},
-  {cat:'Carpentry Works',code:'CP-009',desc:'Cart - Mini Store',budget:39000,selling:39000},
-  {cat:'Floor Finishes',code:'FL-001',desc:'Homogenous Floor Tiles (OSM)',budget:76245,selling:76245},
-  {cat:'Floor Finishes',code:'FL-002',desc:'Waterproofing - Wet Area',budget:60840,selling:60840},
-  {cat:'Floor Finishes',code:'FL-003',desc:'Waterproofing - Dry Area',budget:13260,selling:13260},
-  {cat:'Wall Finishes',code:'WF-001',desc:'Painted Finishes - Kitchen',budget:78390,selling:78390},
-  {cat:'Wall Finishes',code:'WF-002',desc:'Painted Finishes - Office',budget:12870,selling:12870},
-  {cat:'Wall Finishes',code:'WF-003',desc:'Painted Finishes - Bar',budget:10530,selling:10530},
-  {cat:'Wall Finishes',code:'WF-004',desc:'Painted Finishes - Dining',budget:37440,selling:37440},
-  {cat:'Wall Finishes',code:'WF-005',desc:'Painted Finishes - Exterior',budget:32760,selling:32760},
-  {cat:'Wall Finishes',code:'WF-006',desc:'Wall Tiles (OSM)',budget:67405,selling:67405},
-  {cat:'Ceiling Finishes',code:'CF-001',desc:'Painted Finish - Ceiling',budget:45747,selling:45747},
-  {cat:'Drywall / Doors & Windows',code:'DW-101',desc:'Doors',budget:169000,selling:169000},
-  {cat:'Drywall / Doors & Windows',code:'DW-102',desc:'Windows, Glass & Glazing',budget:75972,selling:75972},
-  {cat:'Plumbing Works',code:'PL-001',desc:'Sanitary Line & Fixtures',budget:71760,selling:71760},
-  {cat:'Electrical Works',code:'EL-001',desc:'Lighting & Power Fixtures',budget:116610,selling:116610},
-  // MANPOWER — internal cost only, selling = 0, budget starts blank for user input
-  {cat:'Manpower / Labor',code:'MP-001',desc:'Skilled Workers (Carpenters)',budget:0,selling:0},
-  {cat:'Manpower / Labor',code:'MP-002',desc:'Skilled Workers (Masons/Tilers)',budget:0,selling:0},
-  {cat:'Manpower / Labor',code:'MP-003',desc:'Skilled Workers (Painters)',budget:0,selling:0},
-  {cat:'Manpower / Labor',code:'MP-004',desc:'Skilled Workers (Electrician)',budget:0,selling:0},
-  {cat:'Manpower / Labor',code:'MP-005',desc:'Skilled Workers (Plumber)',budget:0,selling:0},
-  {cat:'Manpower / Labor',code:'MP-006',desc:'General Laborers',budget:0,selling:0},
-  {cat:'Manpower / Labor',code:'MP-007',desc:'Helper / Utility',budget:0,selling:0},
-];
+const COST_CODES_SELLING = [];
 
-const COST_CODES_BUDGET = [
-  {code:'GR-001',budget:0},{code:'GR-002',budget:0},{code:'GR-003',budget:0},{code:'GR-004',budget:0},{code:'GR-005',budget:0},
-  {code:'DW-001',budget:0},{code:'DW-002',budget:0},{code:'DW-003',budget:0},{code:'DW-004',budget:0},
-  {code:'CW-001',budget:0},{code:'CW-002',budget:0},
-  {code:'CP-001',budget:0},{code:'CP-002',budget:0},{code:'CP-003',budget:0},{code:'CP-004',budget:0},{code:'CP-005',budget:0},{code:'CP-006',budget:0},{code:'CP-007',budget:0},{code:'CP-008',budget:0},{code:'CP-009',budget:0},
-  {code:'FL-001',budget:0},{code:'FL-002',budget:0},{code:'FL-003',budget:0},
-  {code:'WF-001',budget:0},{code:'WF-002',budget:0},{code:'WF-003',budget:0},{code:'WF-004',budget:0},{code:'WF-005',budget:0},{code:'WF-006',budget:0},
-  {code:'CF-001',budget:0},{code:'DW-101',budget:0},{code:'DW-102',budget:0},
-  {code:'PL-001',budget:0},{code:'EL-001',budget:0},
-  {code:'MP-001',budget:0},{code:'MP-002',budget:0},{code:'MP-003',budget:0},{code:'MP-004',budget:0},{code:'MP-005',budget:0},{code:'MP-006',budget:0},{code:'MP-007',budget:0},
-];
+const COST_CODES_BUDGET = [];
 
 const SCURVE_PLANNED = [
   {day:1,cPct:1.83},{day:2,cPct:3.66},{day:3,cPct:5.49},{day:4,cPct:5.72},{day:5,cPct:5.95},
@@ -864,53 +811,8 @@ const SCURVE_PLANNED = [
   {day:41,cPct:95.88},{day:42,cPct:96.11},{day:43,cPct:96.87},{day:44,cPct:98.44},{day:45,cPct:100.00},
 ];
 
-// Schedule tasks — sections have costCat = exact CONTRACT_CATEGORIES name
-const SCHEDULE = [
-  {section:'General Requirements', costCat:'General Requirements'},
-  {id:'t1',name:'Permits & Licenses',note:'By Owner',targetStartDay:0,targetEndDay:0,actualStartDate:null,pctComplete:100,done:true,costCodes:[]},
-  {id:'t2',name:'Mobilization',targetStartDay:0,targetEndDay:3,actualStartDate:null,pctComplete:0,costCodes:['GR-001']},
-  {id:'t3',name:'Supervision',targetStartDay:0,targetEndDay:45,actualStartDate:null,pctComplete:0,costCodes:['GR-002']},
-  {id:'t4',name:'Temporary Facilities',targetStartDay:0,targetEndDay:45,actualStartDate:null,pctComplete:0,costCodes:['GR-003']},
-  {id:'t5',name:'Hauling',targetStartDay:43,targetEndDay:45,actualStartDate:null,pctComplete:0,costCodes:['GR-004']},
-  {id:'t6',name:'Demobilization',targetStartDay:44,targetEndDay:45,actualStartDate:null,pctComplete:0,costCodes:['GR-005']},
-  {section:'Drywall / Doors & Windows', costCat:'Drywall / Doors & Windows'},
-  {id:'t7',name:'Gypsum Board on Metal Studs',targetStartDay:6,targetEndDay:19,actualStartDate:null,pctComplete:0,costCodes:['DW-001']},
-  {id:'t8',name:'Fiber Cement Ext. Partition',targetStartDay:6,targetEndDay:15,actualStartDate:null,pctComplete:0,costCodes:['DW-002']},
-  {id:'t9',name:'CHB Zocalo',targetStartDay:6,targetEndDay:12,actualStartDate:null,pctComplete:0,costCodes:['DW-003']},
-  {id:'t10',name:'Plant Box',targetStartDay:8,targetEndDay:12,actualStartDate:null,pctComplete:0,costCodes:['DW-004']},
-  {id:'t26',name:'Doors',targetStartDay:30,targetEndDay:34,actualStartDate:null,pctComplete:0,costCodes:['DW-101']},
-  {id:'t27',name:'Windows, Glass & Glazing',targetStartDay:30,targetEndDay:34,actualStartDate:null,pctComplete:0,costCodes:['DW-102']},
-  {section:'Ceiling Works', costCat:'Ceiling Works'},
-  {id:'t11',name:'Internal Ceiling / Custom',targetStartDay:6,targetEndDay:15,actualStartDate:null,pctComplete:0,costCodes:['CW-001']},
-  {id:'t12',name:'Plain Ceiling',targetStartDay:20,targetEndDay:24,actualStartDate:null,pctComplete:0,costCodes:['CW-002']},
-  {section:'Carpentry Works', costCat:'Carpentry Works'},
-  {id:'t13',name:'Bar Counter w/ Laminate Top',targetStartDay:23,targetEndDay:28,actualStartDate:null,pctComplete:0,costCodes:['CP-001']},
-  {id:'t14',name:'Curved Cupboards',targetStartDay:23,targetEndDay:27,actualStartDate:null,pctComplete:0,costCodes:['CP-002']},
-  {id:'t15',name:'Mini Open Shelving',targetStartDay:28,targetEndDay:31,actualStartDate:null,pctComplete:0,costCodes:['CP-003']},
-  {id:'t16',name:'Brass Wall Finish',targetStartDay:28,targetEndDay:33,actualStartDate:null,pctComplete:0,costCodes:['CP-004']},
-  {id:'t17',name:'Bench w/ Tables (Interior)',targetStartDay:28,targetEndDay:33,actualStartDate:null,pctComplete:0,costCodes:['CP-005']},
-  {id:'t18',name:'Bench Exterior w/ Tables',targetStartDay:29,targetEndDay:32,actualStartDate:null,pctComplete:0,costCodes:['CP-006']},
-  {id:'t19',name:'Open Shelving - Staff Storage',targetStartDay:29,targetEndDay:33,actualStartDate:null,pctComplete:0,costCodes:['CP-007']},
-  {id:'t19b',name:'Office Console',targetStartDay:29,targetEndDay:33,actualStartDate:null,pctComplete:0,costCodes:['CP-008']},
-  {id:'t19c',name:'Cart - Mini Store',targetStartDay:29,targetEndDay:33,actualStartDate:null,pctComplete:0,costCodes:['CP-009']},
-  {section:'Floor Finishes', costCat:'Floor Finishes'},
-  {id:'t20',name:'Homogenous Floor Tiles (OSM)',targetStartDay:20,targetEndDay:26,actualStartDate:null,pctComplete:0,costCodes:['FL-001']},
-  {id:'t21',name:'Waterproofing - Wet Area',targetStartDay:15,targetEndDay:19,actualStartDate:null,pctComplete:0,costCodes:['FL-002']},
-  {id:'t22',name:'Waterproofing - Dry Area',targetStartDay:15,targetEndDay:17,actualStartDate:null,pctComplete:0,costCodes:['FL-003']},
-  {section:'Wall Finishes', costCat:'Wall Finishes'},
-  {id:'t23',name:'Painted Finishes - Kitchen',targetStartDay:30,targetEndDay:39,actualStartDate:null,pctComplete:0,costCodes:['WF-001']},
-  {id:'t23b',name:'Painted Finishes - Office',targetStartDay:30,targetEndDay:39,actualStartDate:null,pctComplete:0,costCodes:['WF-002']},
-  {id:'t23c',name:'Painted Finishes - Bar',targetStartDay:30,targetEndDay:39,actualStartDate:null,pctComplete:0,costCodes:['WF-003']},
-  {id:'t23d',name:'Painted Finishes - Dining',targetStartDay:30,targetEndDay:39,actualStartDate:null,pctComplete:0,costCodes:['WF-004']},
-  {id:'t23e',name:'Painted Finishes - Exterior',targetStartDay:30,targetEndDay:39,actualStartDate:null,pctComplete:0,costCodes:['WF-005']},
-  {id:'t24',name:'Wall Tiles (OSM)',targetStartDay:20,targetEndDay:24,actualStartDate:null,pctComplete:0,costCodes:['WF-006']},
-  {section:'Ceiling Finishes', costCat:'Ceiling Finishes'},
-  {id:'t25',name:'Painted Finish - Ceiling',targetStartDay:35,targetEndDay:39,actualStartDate:null,pctComplete:0,costCodes:['CF-001']},
-  {section:'Plumbing Works', costCat:'Plumbing Works'},
-  {id:'t28',name:'Sanitary Line & Fixtures',targetStartDay:15,targetEndDay:21,actualStartDate:null,pctComplete:0,costCodes:['PL-001']},
-  {section:'Electrical Works', costCat:'Electrical Works'},
-  {id:'t29',name:'Lighting & Power Fixtures',targetStartDay:35,targetEndDay:41,actualStartDate:null,pctComplete:0,costCodes:['EL-001']},
-];
+// Schedule tasks — loaded from Firebase per project
+const SCHEDULE = [];
 
 let expenses = [];
 let budgetLocked = false, scheduleLocked = false;
@@ -967,6 +869,9 @@ function getProjectProgress(){
 // NAVIGATION
 // ============================================================
 function showPage(id,el){
+  // Cancel any pending S-Curve render before switching pages
+  if(window._scurveTimer){ clearTimeout(window._scurveTimer); window._scurveTimer=null; }
+  if(window.dashSCurveChart){ window.dashSCurveChart.destroy(); window.dashSCurveChart=null; }
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
@@ -1472,6 +1377,9 @@ function buildDonut(canvasId,legendId,data,colors,labels,centerText){
 
 let dashSCurveChart=null;
 function buildDashSCurve(){
+  // Don't render if dashboard is not the active page
+  const dashPage=document.getElementById('page-dashboard');
+  if(!dashPage||!dashPage.classList.contains('active')) return;
   if(dashSCurveChart){dashSCurveChart.destroy();dashSCurveChart=null;}
   const el=document.getElementById('dash-scurve-chart');
   if(!el)return;
@@ -2450,8 +2358,22 @@ function initFirebase() {
       if(data) {
         applyState(data);
         refreshAllViews();
+      } else {
+        // New project — try to get name from hub meta
+        metaRef.once('value').then(metaSnap => {
+          const meta = metaSnap.val();
+          if(meta && meta.name) {
+            const titleEl = document.getElementById('set-project-title');
+            const dashTitle = document.getElementById('dash-project-title');
+            const logoName = document.querySelector('.logo-badge .name');
+            if(titleEl) titleEl.value = meta.name;
+            if(dashTitle) dashTitle.textContent = meta.name;
+            if(logoName) logoName.textContent = meta.name.length > 16 ? meta.name.substring(0,16)+'…' : meta.name;
+          }
+        }).catch(()=>{});
 
         console.log('Loaded from Firebase (live)');
+      }
       }
     }).catch(e => { console.warn('Firebase load error:', e); });
 
@@ -2537,6 +2459,19 @@ function renderComments() {
 
 // INIT
 const hadSave = loadState();
+
+// ── FORCE UNLOCK ALL ──────────────────────────────────────────
+// Remove this block once you're ready to re-lock things properly
+budgetLocked = false;
+scheduleLocked = false;
+contractLocked = false;
+PROJECT.locked = false;
+// Re-enable settings inputs in case they were disabled
+['set-start-date','set-work-mode','set-total-days'].forEach(id=>{
+  const el=document.getElementById(id); if(el) el.disabled=false;
+});
+// ──────────────────────────────────────────────────────────────
+
 buildDayDateMap();
 populateDropdowns();
 buildExpenseList();
@@ -2544,6 +2479,8 @@ buildDashboard();
 renderHolidays();
 document.getElementById('exp-date').value=new Date().toISOString().split('T')[0];
 updateBudgetLockUI();
+updateContractLockUI();
+updateScheduleLockUI();
 applyAccessMode();
 updateCommentUI();
 renderComments();
