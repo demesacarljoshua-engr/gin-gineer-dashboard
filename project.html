@@ -166,7 +166,29 @@ canvas { width: 100% !important; }
 </style>
 </head>
 <body>
-<div class="shell client-mode" id="app-shell">
+
+<!-- EMAIL GATE (shown before app if user not verified) -->
+<div id="email-gate" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:1000;align-items:center;justify-content:center">
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:48px 44px;width:440px;max-width:92vw;text-align:center">
+    <div style="width:56px;height:56px;background:var(--accent);border-radius:14px;display:flex;align-items:center;justify-content:center;font-family:Syne,sans-serif;font-weight:800;font-size:20px;color:#000;margin:0 auto 20px">GG</div>
+    <div style="font-family:Syne,sans-serif;font-weight:700;font-size:20px;margin-bottom:6px" id="gate-project-name">Project Dashboard</div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:28px;line-height:1.6">Enter your email address to access this project.<br>You must be invited to continue.</div>
+    <input type="email" id="gate-email" placeholder="your@email.com"
+      style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px 16px;color:var(--text);font-family:'DM Mono',monospace;font-size:14px;text-align:center;outline:none;width:100%;margin-bottom:8px;transition:border-color 0.15s"
+      onkeyup="if(event.key==='Enter')checkEmailGate()"
+      onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+    <div id="gate-error" style="color:var(--danger);font-size:11px;min-height:16px;margin-bottom:14px"></div>
+    <button onclick="checkEmailGate()" id="gate-btn"
+      style="background:var(--accent);color:#000;border:none;border-radius:8px;padding:13px;width:100%;font-family:'DM Mono',monospace;font-size:13px;font-weight:600;cursor:pointer">
+      Continue →
+    </button>
+    <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);font-size:11px;color:var(--text3)">
+      Not invited? Contact your project engineer.
+    </div>
+  </div>
+</div>
+
+<div class="shell client-mode" id="app-shell" style="display:none">
   <aside class="sidebar">
     <div class="sidebar-logo"><div class="logo-badge"><div class="mark">24</div><div><div class="name">24BS Monitor</div><span class="sub">v3.0</span></div></div></div>
     <nav class="nav">
@@ -649,6 +671,7 @@ canvas { width: 100% !important; }
     </div>
   </div>
 </div>
+</div><!-- end app-shell -->
 
 <!-- MODALS -->
 <div class="modal-overlay" id="vo-modal"><div class="modal"><h3>± Variation Order</h3><div class="form-grid"><div class="form-field"><label>Type</label><select id="vo-type"><option value="additive">+ Additive</option><option value="deductive">− Deductive</option></select></div><div class="form-field"><label>Date</label><input type="date" id="vo-date"></div><div class="form-field" style="grid-column:1/-1"><label>Code</label><select id="vo-code"></select></div><div class="form-field"><label>Amount</label><input type="number" id="vo-amount"></div><div class="form-field"><label>Ref</label><input type="text" id="vo-ref"></div><div class="form-field" style="grid-column:1/-1"><label>Reason</label><input type="text" id="vo-reason"></div></div><div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('vo-modal')">Cancel</button><button class="btn btn-primary" onclick="submitVO()">Submit</button></div></div></div>
@@ -1893,6 +1916,98 @@ function buildCompare(){const bm={};COST_CODES_BUDGET.forEach(c=>bm[c.code]=c.bu
 // ============================================================
 // ACCESS CONTROL (Client vs Contractor mode)
 // ============================================================
+// ============================================================
+// EMAIL GATE
+// ============================================================
+let betaUserEmail = ''; // verified email of current user
+
+function initEmailGate() {
+  // Check if already verified this session
+  const savedEmail = sessionStorage.getItem('gg_verified_email_' + PROJECT_ID);
+  if(savedEmail) {
+    betaUserEmail = savedEmail;
+    showApp();
+    return;
+  }
+  // Check if project has whitelist
+  if(firebaseReady && metaRef) {
+    metaRef.child('whitelist').once('value').then(snap => {
+      const whitelist = snap.val();
+      if(!whitelist || whitelist.length === 0) {
+        // No whitelist set — open access
+        showApp();
+      } else {
+        // Show gate
+        showGate();
+      }
+    }).catch(() => showApp()); // if can't read, let through
+  } else {
+    // Firebase not ready yet — show gate to be safe, retry after connect
+    showGate();
+  }
+}
+
+function showGate() {
+  // Set project name on gate
+  if(metaRef) {
+    metaRef.once('value').then(snap => {
+      const meta = snap.val();
+      if(meta && meta.name) {
+        document.getElementById('gate-project-name').textContent = meta.name;
+      }
+    }).catch(()=>{});
+  }
+  document.getElementById('email-gate').style.display = 'flex';
+  document.getElementById('app-shell').style.display = 'none';
+  setTimeout(() => document.getElementById('gate-email').focus(), 200);
+}
+
+function showApp() {
+  document.getElementById('email-gate').style.display = 'none';
+  document.getElementById('app-shell').style.display = 'flex';
+}
+
+function checkEmailGate() {
+  const email = document.getElementById('gate-email').value.trim().toLowerCase();
+  const errEl = document.getElementById('gate-error');
+  const btn = document.getElementById('gate-btn');
+  if(!email || !email.includes('@')) {
+    errEl.textContent = 'Please enter a valid email address.';
+    return;
+  }
+  btn.textContent = 'Checking...';
+  btn.disabled = true;
+  errEl.textContent = '';
+  if(firebaseReady && metaRef) {
+    metaRef.child('whitelist').once('value').then(snap => {
+      const whitelist = snap.val() || [];
+      const allowed = Array.isArray(whitelist)
+        ? whitelist.map(e => e.toLowerCase()).includes(email)
+        : Object.values(whitelist).map(e => e.toLowerCase()).includes(email);
+      if(allowed) {
+        betaUserEmail = email;
+        sessionStorage.setItem('gg_verified_email_' + PROJECT_ID, email);
+        // Log access to Firebase
+        const accessRef = firebase.database().ref('projects/' + PROJECT_ID + '/access');
+        accessRef.push({ email, time: new Date().toISOString(), action: 'login' });
+        showApp();
+      } else {
+        errEl.textContent = 'Your email is not on the access list for this project.';
+        btn.textContent = 'Continue →';
+        btn.disabled = false;
+      }
+    }).catch(() => {
+      errEl.textContent = 'Could not verify access. Please try again.';
+      btn.textContent = 'Continue →';
+      btn.disabled = false;
+    });
+  } else {
+    errEl.textContent = 'Not connected. Please refresh and try again.';
+    btn.textContent = 'Continue →';
+    btn.disabled = false;
+  }
+}
+
 let accessMode = 'client'; // 'client' or 'contractor'
 let PASSCODE = '0000';
 let CLIENT_PASSCODE = ''; // empty = no client passcode required
@@ -2338,6 +2453,9 @@ function initFirebase() {
     document.getElementById('sync-status').textContent = '☁ Live';
     document.getElementById('sync-status').style.color = 'var(--accent3)';
 
+    // Initialize email gate now that Firebase is ready
+    initEmailGate();
+
     // Listen for real-time data changes (for client viewers)
     dbRef.on('value', (snapshot) => {
       try {
@@ -2505,6 +2623,10 @@ updateScheduleLockUI();
 applyAccessMode();
 updateCommentUI();
 renderComments();
+
+// Show gate immediately (will resolve once Firebase loads)
+// This prevents flash of content before verification
+document.getElementById('email-gate').style.display = 'flex';
 
 // Initialize Firebase
 initFirebase();
