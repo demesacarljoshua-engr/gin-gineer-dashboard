@@ -182,6 +182,13 @@ body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;font
       <div class="form-field"><label>Contract Value (₱)</label><input type="number" id="pm-contract" placeholder="0.00"></div>
       <div class="form-field"><label>Client Passcode</label><input type="text" id="pm-passcode" placeholder="e.g. 1234" maxlength="10"><span class="hint">Client enters this in their dashboard</span></div>
       <div class="form-field" style="grid-column:1/-1"><label>Notes (optional)</label><input type="text" id="pm-notes" placeholder="Location, scope, etc."></div>
+      <div class="form-field" style="grid-column:1/-1">
+        <label>Beta Access — Whitelisted Emails</label>
+        <textarea id="pm-whitelist" rows="3" placeholder="One email per line&#10;e.g.&#10;colleague@email.com&#10;tester@email.com"
+          style="background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:9px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:11px;outline:none;width:100%;resize:vertical;transition:border-color 0.15s"
+          onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+        <span class="hint">Leave blank = no email gate. Add emails to restrict access to invited users only.</span>
+      </div>
     </div>
     <div style="margin-top:14px;padding:10px 14px;background:rgba(79,195,161,0.06);border:1px solid rgba(79,195,161,0.2);border-radius:8px;font-size:11px;color:var(--text3);line-height:1.7">
       📎 Client link: <span id="pm-link-preview" style="color:var(--accent3);word-break:break-all">—</span>
@@ -357,6 +364,7 @@ function buildCard(id,proj){
     <div class="card-footer">
       <a href="${url}" class="btn btn-primary" style="flex:1;justify-content:center">Open Dashboard →</a>
       <button class="btn btn-blue btn-sm btn-icon" onclick="copyLink('${sid}')" title="Copy client link">🔗</button>
+      <button class="btn btn-ghost btn-sm btn-icon" onclick="viewAccessLog('${sid}')" title="View access log">👥</button>
       <button class="btn btn-ghost btn-sm btn-icon" onclick="openEditModal('${sid}')" title="Edit">✎</button>
       <button class="btn btn-danger btn-sm btn-icon" onclick="deleteProject('${sid}','${sname}')" title="Delete">✕</button>
     </div>
@@ -368,6 +376,7 @@ function openAddModal(){
   document.getElementById('pm-title').textContent='+ New Project';
   document.getElementById('pm-submit').textContent='Create Project';
   ['pm-name','pm-client','pm-id','pm-contract','pm-notes'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('pm-whitelist').value='';
   document.getElementById('pm-id').disabled=false;
   document.getElementById('pm-passcode').value='0000';
   document.getElementById('pm-status').value='pending';
@@ -389,6 +398,9 @@ function openEditModal(id){
   document.getElementById('pm-passcode').value=m.passcode||'0000';
   document.getElementById('pm-status').value=m.status||'active';
   document.getElementById('pm-notes').value=m.notes||'';
+  // Populate whitelist
+  const wl = m.whitelist || [];
+  document.getElementById('pm-whitelist').value = Array.isArray(wl) ? wl.join('\n') : Object.values(wl).join('\n');
   updateLinkPreview();
   document.getElementById('project-modal').classList.add('show');
 }
@@ -411,7 +423,10 @@ function submitProject(){
   if(!id){alert('Enter a project ID.');return;}
   if(!editingId&&allProjects[id]){alert('Project ID already exists. Choose another.');return;}
   const existing=(allProjects[id]||{}).meta||{};
-  const meta={name,client,status,contractValue,passcode,notes,progress:existing.progress||0,created:existing.created||new Date().toISOString(),lastUpdated:new Date().toISOString()};
+  // Parse whitelist — one email per line, clean and lowercase
+  const whitelistRaw = document.getElementById('pm-whitelist').value;
+  const whitelist = whitelistRaw.split('\n').map(e=>e.trim().toLowerCase()).filter(e=>e && e.includes('@'));
+  const meta={name,client,status,contractValue,passcode,notes,whitelist,progress:existing.progress||0,created:existing.created||new Date().toISOString(),lastUpdated:new Date().toISOString()};
   if(firebaseReady&&projectsRef){
     projectsRef.child(id).update({meta}).then(()=>closeModal('project-modal')).catch(e=>alert('Error: '+e.message));
   } else {
@@ -451,6 +466,34 @@ function saveSettings(){
 
 function closeModal(id){document.getElementById(id).classList.remove('show');}
 
+// ============================================================
+// BETA ACCESS LOG
+// ============================================================
+function viewAccessLog(id) {
+  const name = (allProjects[id]?.meta?.name) || id;
+  document.getElementById('access-modal-title').textContent = '👥 ' + name + ' — Access Log';
+  document.getElementById('access-log-content').innerHTML = '<div style="color:var(--text3);text-align:center;padding:20px">Loading...</div>';
+  document.getElementById('access-modal').classList.add('show');
+  if(firebaseReady && projectsRef) {
+    projectsRef.child(id + '/access').once('value').then(snap => {
+      const data = snap.val();
+      if(!data) {
+        document.getElementById('access-log-content').innerHTML = '<div style="color:var(--text3);text-align:center;padding:20px">No access logs yet.</div>';
+        return;
+      }
+      const entries = Object.values(data).sort((a,b) => new Date(b.time) - new Date(a.time));
+      document.getElementById('access-log-content').innerHTML = entries.map(e => {
+        const d = new Date(e.time);
+        const timeStr = d.toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'}) + ' ' + d.toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit'});
+        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:1px solid var(--border)">'
+          + '<span style="color:var(--accent3)">' + e.email + '</span>'
+          + '<span style="font-size:10px;color:var(--text3)">' + timeStr + '</span>'
+          + '</div>';
+      }).join('');
+    });
+  }
+}
+
 function boot(){
   if(typeof firebase!=='undefined'){initFirebase();}
   else{
@@ -463,5 +506,13 @@ function boot(){
 }
 boot();
 </script>
+<!-- ACCESS LOG MODAL -->
+<div class="modal-overlay" id="access-modal">
+  <div class="modal" style="width:480px">
+    <h3 id="access-modal-title">Access Log</h3>
+    <div id="access-log-content" style="max-height:400px;overflow-y:auto;margin:0 -28px;border-top:1px solid var(--border)"></div>
+    <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal('access-modal')">Close</button></div>
+  </div>
+</div>
 </body>
 </html>
