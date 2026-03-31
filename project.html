@@ -333,7 +333,7 @@ canvas { width: 100% !important; }
               </div>
               <div style="text-align:right;flex-shrink:0">
                 <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:3px">Contract Value</div>
-                <div id="dash-contract" style="font-family:Syne,sans-serif;font-weight:700;font-size:26px;color:var(--accent);line-height:1">₱3.13M</div>
+                <div id="dash-contract" style="font-family:Syne,sans-serif;font-weight:700;font-size:26px;color:var(--accent);line-height:1">—</div>
                 <div id="dash-contract-sub" style="font-size:10px;color:var(--text3);margin-top:3px"></div>
               </div>
             </div>
@@ -1212,13 +1212,16 @@ function buildDashboard(){
   const col=MILESTONES.filter(m=>m.paid).reduce((s,m)=>s+m.amount,0);
 
   // KPIs
-  // Contract value — show locked value vs draft clearly
+  // Contract value — show from contract if available, else show ₱0
   const displayVal = getTotalSelling();
-  document.getElementById('dash-contract').textContent = displayVal > 0 ? '₱'+(displayVal/1e6).toFixed(2)+'M' : '—';
+  const showVal = displayVal > 0 ? displayVal : 0;
+  document.getElementById('dash-contract').textContent = showVal > 0 ? '₱'+(showVal/1e6).toFixed(2)+'M' : '—';
   document.getElementById('dash-contract').style.color = contractLocked ? 'var(--accent)' : 'var(--accent2)';
   document.getElementById('dash-contract-sub').innerHTML = contractLocked
-    ? `${fmtS(displayVal)} · VAT Excl. <span style="color:var(--accent3);margin-left:4px">🔒 Locked</span>`
-    : `${displayVal>0?fmtS(displayVal)+' ·':''} <span style="color:var(--accent2)">⚠ Contract not yet locked</span>`;
+    ? `${fmtS(showVal)} · VAT Excl. <span style="color:var(--accent3);margin-left:4px">🔒 Locked</span>`
+    : showVal>0
+      ? `${fmtS(showVal)} · <span style="color:var(--accent2)">Contract not yet locked</span>`
+      : `<span style="color:var(--text3)">Go to Contract tab to add line items</span>`;
   document.getElementById('kpi-progress-main').textContent=projPct.toFixed(1)+'%';
   document.getElementById('kpi-progress-sub').textContent=done+' done, '+active+' active of '+tasks.length;
   document.getElementById('kpi-actual').textContent=fmtS(tot);
@@ -2324,7 +2327,8 @@ function initFirebase() {
     return;
   }
   try {
-    firebase.initializeApp(FIREBASE_CONFIG);
+    // Handle "app already exists" on back navigation
+    try { firebase.app(); } catch(e) { firebase.initializeApp(FIREBASE_CONFIG); }
     const db = firebase.database();
     dbRef = db.ref(DB_PATH + '/data');
     commentsRef = db.ref(DB_PATH + '/comments');
@@ -2352,6 +2356,17 @@ function initFirebase() {
       renderComments();
     });
 
+    // Load hub settings for passcode (needed for contractor login on any project)
+    const db2 = firebase.database();
+    db2.ref('hub/settings').once('value').then(hsnap => {
+      const hs = hsnap.val();
+      if(hs && hs.passcode) {
+        PASSCODE = hs.passcode;
+        const pcEl = document.getElementById('set-passcode');
+        if(pcEl) pcEl.value = PASSCODE;
+      }
+    }).catch(()=>{});
+
     // If Firebase has data, load it over localStorage
     dbRef.once('value').then(snapshot => {
       const data = snapshot.val();
@@ -2359,16 +2374,23 @@ function initFirebase() {
         applyState(data);
         refreshAllViews();
       } else {
-        // New project — try to get name from hub meta
+        // New project — get name + passcode from hub meta
         metaRef.once('value').then(metaSnap => {
           const meta = metaSnap.val();
-          if(meta && meta.name) {
-            const titleEl = document.getElementById('set-project-title');
-            const dashTitle = document.getElementById('dash-project-title');
-            const logoName = document.querySelector('.logo-badge .name');
-            if(titleEl) titleEl.value = meta.name;
-            if(dashTitle) dashTitle.textContent = meta.name;
-            if(logoName) logoName.textContent = meta.name.length > 16 ? meta.name.substring(0,16)+'…' : meta.name;
+          if(meta) {
+            if(meta.name) {
+              const titleEl = document.getElementById('set-project-title');
+              const dashTitle = document.getElementById('dash-project-title');
+              const logoName = document.querySelector('.logo-badge .name');
+              if(titleEl) titleEl.value = meta.name;
+              if(dashTitle) dashTitle.textContent = meta.name;
+              if(logoName) logoName.textContent = meta.name.length > 16 ? meta.name.substring(0,16)+'…' : meta.name;
+            }
+            if(meta.passcode) {
+              PASSCODE = meta.passcode;
+              const pcEl = document.getElementById('set-passcode');
+              if(pcEl) pcEl.value = PASSCODE;
+            }
           }
         }).catch(()=>{});
 
