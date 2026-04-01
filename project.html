@@ -2077,26 +2077,46 @@ function updateKPIs(){
 }
 function buildCompare(){
   const contractItems=COST_CODES_SELLING.filter(c=>!isInternalOnly(c));
-  const tb=contractItems.reduce((s,c)=>s+(c.budget||0),0);
-  const ts=getTotalSelling(),gp=ts-tb;
+  const manpowerItems=COST_CODES_SELLING.filter(c=>isInternalOnly(c));
+  const contractBudget=contractItems.reduce((s,c)=>s+(c.budget||0),0);
+  const manpowerBudget=manpowerItems.reduce((s,c)=>s+(c.budget||0),0);
+  const tb=contractBudget+manpowerBudget; // total internal cost includes manpower
+  const ts=getTotalSelling();
+  const gp=ts-tb;
   document.getElementById('cmp-budget').textContent=fmtS(tb);
   document.getElementById('cmp-selling').textContent=fmtS(ts);
   document.getElementById('cmp-profit').textContent=fmtS(gp);
   document.getElementById('cmp-margin').textContent=ts>0?(gp/ts*100).toFixed(1)+'%':'—';
   let lc='';
-  document.querySelector('#compare-table tbody').innerHTML=contractItems.map(c=>{
-    const budget=c.budget||0,sell=c.selling||0,diff=sell-budget,pct=budget>0?((diff/budget)*100):0;
+  const allRows=[...contractItems,...manpowerItems];
+  document.querySelector('#compare-table tbody').innerHTML=allRows.map(c=>{
+    const isMP=isInternalOnly(c);
+    const budget=c.budget||0,sell=isMP?0:(c.selling||0);
+    const diff=isMP?-budget:sell-budget;
+    const pct=budget>0?((diff/budget)*100):0;
     let cr='';
-    if(c.cat!==lc){cr=`<tr class="section-row"><td colspan="6">${c.cat}</td></tr>`;lc=c.cat;}
+    if(c.cat!==lc){
+      cr=`<tr class="section-row"><td colspan="6">${c.cat}${isMP?' <span style="font-size:9px;color:#7c6aff">(Internal)</span>':''}</td></tr>`;
+      lc=c.cat;
+    }
     return cr+`<tr>
       <td style="color:var(--text3)">${c.code}</td>
       <td>${c.desc}</td>
       <td style="color:var(--accent)">₱${budget.toLocaleString()}</td>
-      <td style="color:var(--accent2)">₱${sell.toLocaleString()}</td>
+      <td style="color:${isMP?'var(--text3)':'var(--accent2)'}">${isMP?'—':'₱'+sell.toLocaleString()}</td>
       <td class="${diff>0?'pos':diff<0?'neg':'neutral'}">${diff>=0?'+':''}₱${Math.abs(diff).toLocaleString()}</td>
       <td class="${diff>0?'pos':diff<0?'neg':'neutral'}">${pct.toFixed(1)}%</td>
     </tr>`;
   }).join('');
+  // Totals row
+  document.querySelector('#compare-table tbody').innerHTML += `
+    <tr style="background:var(--bg2);font-weight:600;border-top:2px solid var(--border)">
+      <td colspan="2" style="padding:10px 12px;font-size:11px;text-transform:uppercase;color:var(--text3)">Total</td>
+      <td style="color:var(--accent)">₱${tb.toLocaleString()}</td>
+      <td style="color:var(--accent2)">₱${ts.toLocaleString()}</td>
+      <td class="${gp>=0?'pos':'neg'}">${gp>=0?'+':''}₱${Math.abs(gp).toLocaleString()}</td>
+      <td class="${gp>=0?'pos':'neg'}">${ts>0?(gp/ts*100).toFixed(1)+'%':'—'}</td>
+    </tr>`;
 }
 
 // ============================================================
