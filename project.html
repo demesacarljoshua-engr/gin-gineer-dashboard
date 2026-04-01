@@ -955,13 +955,13 @@ function buildGantt(){
     rows+='<tr><td style="font-size:11px">'+t.name+(t.note?'<br><span style="font-size:9px;color:var(--text3)">'+t.note+'</span>':'')+'</td>';
 
     if(!scheduleLocked){
-      rows+=`<td><input class="gantt-date-input" type="date" value="${startDate}" onchange="onGanttDateChange('${t.id}','start',this.value)"></td>`;
-      rows+=`<td><input class="gantt-date-input" type="date" value="${endDate}" onchange="onGanttDateChange('${t.id}','end',this.value)"></td>`;
+      rows+=`<td><input class="gantt-date-input" type="date" value="${startDate}" onchange="onGanttDateChange('${t.id}','start',this.value)" min="${dayToDate(0)||''}" max="${dayToDate(PROJECT.totalDays)||''}"></td>`;
+      rows+=`<td><input class="gantt-date-input" type="date" value="${endDate}" onchange="onGanttDateChange('${t.id}','end',this.value)" min="${dayToDate(0)||''}" max="${dayToDate(PROJECT.totalDays)||''}"></td>`;
       rows+=`<td style="text-align:center;font-size:10px;color:var(--text2)">${dur}d</td>`;
     } else {
       rows+=`<td style="font-size:10px;color:var(--text3)">${formatDateShort(startDate)} → ${formatDateShort(endDate)} (${dur}d)</td>`;
       rows+=`<td><input class="gantt-date-input" type="date" value="${t.actualStartDate||''}" placeholder="—" onchange="onGanttActual('${t.id}',this.value)"></td>`;
-      rows+=`<td><div style="display:flex;align-items:center;gap:4px"><input class="gantt-pct-input" type="number" min="0" max="100" value="${t.pctComplete}" onchange="onGanttPct('${t.id}',this.value)"><span style="font-size:9px;color:var(--text3)">%</span></div></td>`;
+      rows+=`<td><div style="display:flex;align-items:center;gap:4px"><input class="gantt-pct-input" type="number" min="0" max="100" value="${t.pctComplete}" onchange="onGanttPct('${t.id}',this.value)" oninput="this.value=Math.min(100,Math.max(0,parseInt(this.value)||0))"><span style="font-size:9px;color:var(--text3)">%</span></div></td>`;
     }
 
     // Day cells (0 to TD)
@@ -996,8 +996,24 @@ function buildGantt(){
 
 function onGanttDateChange(id,field,val){
   const t=SCHEDULE.find(x=>x.id===id);if(!t)return;
+  if(!val) return; // ignore empty
+  // Validate: must be a full YYYY-MM-DD and year must be 4 digits
+  const parts=val.split('-');
+  if(parts.length!==3||parts[0].length!==4||parseInt(parts[0])<2000) return;
   const day=dateToDay(val);
-  if(day===null){alert('Date is not a working day in this project.');return;}
+  if(day===null){
+    // Date exists but not a working day — snap to nearest valid day
+    const closest=dayDateMap.reduce((best,d)=>{
+      const diff=Math.abs(new Date(d.date)-new Date(val));
+      return diff<Math.abs(new Date(best.date)-new Date(val))?d:best;
+    }, dayDateMap[0]);
+    if(closest){
+      if(field==='start'){t.targetStartDay=closest.day;if(t.targetEndDay<closest.day)t.targetEndDay=closest.day;}
+      else{t.targetEndDay=closest.day;if(t.targetStartDay>closest.day)t.targetStartDay=closest.day;}
+      buildGantt();autoSave();
+    }
+    return;
+  }
   if(field==='start'){t.targetStartDay=day;if(t.targetEndDay<day)t.targetEndDay=day;}
   else{t.targetEndDay=day;if(t.targetStartDay>day)t.targetStartDay=day;}
   buildGantt();autoSave();
@@ -1710,7 +1726,7 @@ function rebuildScheduleFromContract(){
       SCHEDULE.splice(insertIdx,0,{
         id:'t'+Date.now()+Math.random().toString(36).substr(2,5),
         name:c.desc, costCodes:[c.code],
-        targetStartDay:0, targetEndDay:PROJECT.totalDays,
+        targetStartDay:0, targetEndDay:Math.max(0,PROJECT.totalDays-1),
         actualStartDate:null, pctComplete:0
       });
     }
