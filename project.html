@@ -2075,7 +2075,29 @@ function updateKPIs(){
     ? fmtS(bt)+' · VAT Excl. <span style="color:var(--accent3);margin-left:4px">🔒 Locked</span>'
     : (bt>0?fmtS(bt)+' · ':'')+'<span style="color:var(--accent2)">⚠ Contract not yet locked</span>';
 }
-function buildCompare(){const contractItems=COST_CODES_SELLING.filter(c=>!isInternalOnly(c));const tb=contractItems.reduce((s,c)=>s+(c.budget||0),0),ts=getTotalSelling(),gp=ts-tb;document.getElementById('cmp-budget').textContent=fmtS(tb);document.getElementById('cmp-selling').textContent=fmtS(ts);document.getElementById('cmp-profit').textContent=fmtS(gp);document.getElementById('cmp-margin').textContent=(gp/ts*100).toFixed(1)+'%';let lc='';document.querySelector('#compare-table tbody').innerHTML=contractItems.map(c=>{const b=bm[c.code]||0,mk=c.budget-b,mp=b>0?(mk/b*100):0;let cr='';if(c.cat!==lc){cr=`<tr class="section-row"><td colspan="6">${c.cat}</td></tr>`;lc=c.cat;}const b=c.budget||0,sell=c.selling||0,mk=sell-b,mp=b>0?((mk/b)*100):0;let cr='';if(c.cat!==lc){cr=`<tr class="section-row"><td colspan="6">${c.cat}</td></tr>`;lc=c.cat;}return cr+`<tr><td style="color:var(--text3)">${c.code}</td><td>${c.desc}</td><td style="color:var(--accent)">₱${b.toLocaleString()}</td><td style="color:var(--accent2)">₱${sell.toLocaleString()}</td><td class="${mk>0?'pos':mk<0?'neg':'neutral'}">${mk>=0?'+':''}₱${Math.abs(mk).toLocaleString()}</td><td class="${mk>0?'pos':mk<0?'neg':'neutral'}">${mp.toFixed(1)}%</td></tr>`;}).join('');}
+function buildCompare(){
+  const contractItems=COST_CODES_SELLING.filter(c=>!isInternalOnly(c));
+  const tb=contractItems.reduce((s,c)=>s+(c.budget||0),0);
+  const ts=getTotalSelling(),gp=ts-tb;
+  document.getElementById('cmp-budget').textContent=fmtS(tb);
+  document.getElementById('cmp-selling').textContent=fmtS(ts);
+  document.getElementById('cmp-profit').textContent=fmtS(gp);
+  document.getElementById('cmp-margin').textContent=ts>0?(gp/ts*100).toFixed(1)+'%':'—';
+  let lc='';
+  document.querySelector('#compare-table tbody').innerHTML=contractItems.map(c=>{
+    const budget=c.budget||0,sell=c.selling||0,diff=sell-budget,pct=budget>0?((diff/budget)*100):0;
+    let cr='';
+    if(c.cat!==lc){cr=`<tr class="section-row"><td colspan="6">${c.cat}</td></tr>`;lc=c.cat;}
+    return cr+`<tr>
+      <td style="color:var(--text3)">${c.code}</td>
+      <td>${c.desc}</td>
+      <td style="color:var(--accent)">₱${budget.toLocaleString()}</td>
+      <td style="color:var(--accent2)">₱${sell.toLocaleString()}</td>
+      <td class="${diff>0?'pos':diff<0?'neg':'neutral'}">${diff>=0?'+':''}₱${Math.abs(diff).toLocaleString()}</td>
+      <td class="${diff>0?'pos':diff<0?'neg':'neutral'}">${pct.toFixed(1)}%</td>
+    </tr>`;
+  }).join('');
+}
 
 // ============================================================
 // ACCESS CONTROL (Client vs Contractor mode)
