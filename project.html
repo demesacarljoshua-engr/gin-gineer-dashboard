@@ -616,8 +616,45 @@ canvas { width: 100% !important; }
           <div class="kpi-card" style="--accent-color:var(--accent)"><div class="kpi-label">Expenses</div><div class="kpi-value" id="pay-expenses"></div><div class="kpi-sub">Logged</div></div>
           <div class="kpi-card" style="--accent-color:#7c6aff"><div class="kpi-label">Net Cash</div><div class="kpi-value" id="pay-net">₱0</div><div class="kpi-sub">Collected - Expenses</div></div>
         </div>
+        <!-- Payment Terms Setup -->
+        <div class="panel full-panel contractor-only" style="margin-bottom:16px">
+          <div class="panel-header">
+            <span class="panel-title">Payment Terms Setup</span>
+            <div style="font-size:10px;color:var(--text3)" id="pay-terms-total-badge"></div>
+          </div>
+          <div class="panel-body" style="padding:16px 20px">
+            <div style="display:grid;grid-template-columns:repeat(3,auto) 1fr;gap:12px 20px;align-items:center;flex-wrap:wrap">
+              <div class="form-field" style="min-width:160px">
+                <label>Downpayment %</label>
+                <input type="number" id="pay-dp-pct" min="0" max="100" placeholder="e.g. 30"
+                  style="background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--accent);font-family:'DM Mono',monospace;font-size:13px;width:100%;outline:none;text-align:center"
+                  onchange="rebuildPaymentTerms()">
+              </div>
+              <div class="form-field" style="min-width:160px">
+                <label>No. of Progress Billings</label>
+                <input type="number" id="pay-progress-count" min="0" max="12" placeholder="e.g. 2"
+                  style="background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;width:100%;outline:none;text-align:center"
+                  onchange="rebuildPaymentTerms()">
+              </div>
+              <div class="form-field" style="min-width:160px">
+                <label>Final Billing %</label>
+                <input type="number" id="pay-final-pct" min="0" max="100" placeholder="e.g. 10"
+                  style="background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--accent);font-family:'DM Mono',monospace;font-size:13px;width:100%;outline:none;text-align:center"
+                  onchange="rebuildPaymentTerms()">
+              </div>
+              <button class="btn btn-primary" onclick="rebuildPaymentTerms()" style="padding:9px 16px;align-self:flex-end">⟳ Rebuild Schedule</button>
+            </div>
+            <div id="pay-terms-warning" style="display:none;margin-top:10px;padding:8px 12px;background:rgba(232,85,85,0.1);border-radius:6px;font-size:11px;color:var(--danger)"></div>
+          </div>
+        </div>
         <div class="grid-2">
-          <div class="panel"><div class="panel-header"><span class="panel-title">Milestones</span><span class="badge gray" id="pay-paid-count"></span></div><div class="panel-body" style="padding:0"><div id="milestone-list"></div></div></div>
+          <div class="panel">
+            <div class="panel-header">
+              <span class="panel-title">Billing Schedule</span>
+              <span class="badge gray" id="pay-paid-count"></span>
+            </div>
+            <div class="panel-body" style="padding:0"><div id="milestone-list"></div></div>
+          </div>
           <div class="panel"><div class="panel-header"><span class="panel-title">Summary</span><span class="badge yellow" id="pay-balance-badge"></span></div><div class="panel-body" style="padding:0"><div id="cashflow-waterfall" style="padding:16px 20px"></div></div></div>
         </div>
       </div>
@@ -813,12 +850,8 @@ function fmt2(v) { return '₱' + Math.abs(v).toLocaleString('en', {minimumFract
 // DATA — starts empty, loaded from Firebase per project ID
 // ============================================================
 let TOTAL_CONTRACT = 0;
-const MILESTONES = [
-  {id:1,label:'Downpayment',trigger:'Upon signing',pct:'30%',amount:0,day:'Day 0',notes:'Before mobilization',color:'#4fc3a1',bg:'rgba(79,195,161,0.1)',bd:'rgba(79,195,161,0.3)',paid:false,paidDate:''},
-  {id:2,label:'1st Progress',trigger:'50% complete',pct:'25%',amount:0,day:'Day 0',notes:'',color:'#f5c842',bg:'rgba(245,200,66,0.1)',bd:'rgba(245,200,66,0.3)',paid:false,paidDate:''},
-  {id:3,label:'2nd Progress',trigger:'75% complete',pct:'25%',amount:0,day:'Day 0',notes:'',color:'#e8843a',bg:'rgba(232,132,58,0.1)',bd:'rgba(232,132,58,0.3)',paid:false,paidDate:''},
-  {id:4,label:'Final',trigger:'Turnover',pct:'20%',amount:0,day:'Day 0',notes:'',color:'#7c6aff',bg:'rgba(124,106,255,0.1)',bd:'rgba(124,106,255,0.3)',paid:false,paidDate:''}
-];
+let MILESTONES = []; // built dynamically from payment terms
+let PAYMENT_TERMS = { dpPct: 30, progressCount: 1, finalPct: 10 };
 
 const COST_CODES_SELLING = [];
 
@@ -944,10 +977,21 @@ function buildGantt(){
   h1+='</tr>';
   thead.innerHTML=h1;
 
-  // Body
+  // Body — build section map first to skip empty sections
+  const sectionHasTasks={};
+  let curSecLabel=null;
+  for(const t of SCHEDULE){
+    if(t.section){curSecLabel=t.section;if(!sectionHasTasks[curSecLabel])sectionHasTasks[curSecLabel]=false;}
+    else if(curSecLabel){sectionHasTasks[curSecLabel]=true;}
+  }
+
   let rows='';
   for(const t of SCHEDULE){
-    if(t.section){rows+=`<tr class="gantt-section-row"><td colspan="${4+TD+1}">${t.section}</td></tr>`;ci=(ci+1)%colors.length;continue;}
+    if(t.section){
+      if(!sectionHasTasks[t.section]) continue; // skip empty sections
+      rows+=`<tr class="gantt-section-row"><td colspan="${4+TD+1}">${t.section}</td></tr>`;
+      ci=(ci+1)%colors.length;continue;
+    }
     const dur=getDur(t);
     const startDate=dayToDate(t.targetStartDay);
     const endDate=dayToDate(t.targetEndDay);
@@ -1897,11 +1941,118 @@ function buildBVC(){
 // ============================================================
 // PAYMENTS / CASHFLOW / EXPENSES (condensed from v2)
 // ============================================================
-function buildPayments(){renderMilestones();updatePayKPIs();}
-function renderMilestones(){document.getElementById('milestone-list').innerHTML=MILESTONES.map(m=>`<div class="milestone-card ${m.paid?'paid':''}"><div style="flex-shrink:0;margin-top:3px"><div class="pay-check ${m.paid?'checked':''}" onclick="togglePay(${m.id})">${m.paid?'✓':''}</div></div><div class="ms-pct-badge" style="background:${m.bg};border:1px solid ${m.bd}"><span style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:${m.color}">${m.pct}</span></div><div class="ms-info"><div class="ms-title">${m.label}</div><div class="ms-trigger">${m.trigger}</div><div class="ms-amount">₱${m.amount.toLocaleString('en',{minimumFractionDigits:2})}</div><div style="display:flex;align-items:center;gap:8px;margin-top:6px"><span style="font-size:10px;color:var(--text3)">Received:</span><input class="ms-date-input" type="date" value="${m.paidDate}" onchange="setPayDate(${m.id},this.value)" ${!m.paid?'disabled style="opacity:0.4"':''}></div><div class="ms-paid-on">${m.paid?'✓ '+(m.paidDate?formatDateShort(m.paidDate):'Received'):''}</div></div><div style="flex-shrink:0"><span class="badge ${m.paid?'green':'gray'}">${m.paid?'PAID':'PENDING'}</span></div></div>`).join('');}
-function togglePay(id){const m=MILESTONES.find(x=>x.id===id);m.paid=!m.paid;if(m.paid&&!m.paidDate)m.paidDate=new Date().toISOString().split('T')[0];if(!m.paid)m.paidDate='';renderMilestones();updatePayKPIs();updateCashFlow();updateKPIs();autoSave();}
-function setPayDate(id,v){MILESTONES.find(x=>x.id===id).paidDate=v;updateCashFlow();autoSave();}
-function updatePayKPIs(){const col=MILESTONES.filter(m=>m.paid).reduce((s,m)=>s+m.amount,0),out=TOTAL_CONTRACT-col,exp=getTotalActual(),net=col-exp,cp=(col/TOTAL_CONTRACT*100).toFixed(1);const se=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};se('pay-collected',fmtS(col));se('pay-collected-pct',cp+'%');se('pay-outstanding',fmtS(out));se('pay-outstanding-pct',(100-parseFloat(cp)).toFixed(1)+'%');se('pay-expenses',fmtS(exp));se('pay-net',(net>=0?'+':'-')+fmtS(Math.abs(net)));if(document.getElementById('pay-net'))document.getElementById('pay-net').className='kpi-value '+(net>=0?'pos':'neg');se('pay-paid-count',MILESTONES.filter(m=>m.paid).length+' of 4');se('pay-balance-badge','Net: '+(net>=0?'+':'-')+fmtS(Math.abs(net)));buildWaterfall(col,exp,net,out);}
+// Milestone colors cycle
+const MS_COLORS=[
+  {color:'#4fc3a1',bg:'rgba(79,195,161,0.1)',bd:'rgba(79,195,161,0.3)'},
+  {color:'#f5c842',bg:'rgba(245,200,66,0.1)',bd:'rgba(245,200,66,0.3)'},
+  {color:'#e8843a',bg:'rgba(232,132,58,0.1)',bd:'rgba(232,132,58,0.3)'},
+  {color:'#7c6aff',bg:'rgba(124,106,255,0.1)',bd:'rgba(124,106,255,0.3)'},
+  {color:'#e879a0',bg:'rgba(232,121,160,0.1)',bd:'rgba(232,121,160,0.3)'},
+  {color:'#29b6f6',bg:'rgba(41,182,246,0.1)',bd:'rgba(41,182,246,0.3)'},
+];
+
+function rebuildPaymentTerms(preservePaid){
+  const dpPct = parseFloat(document.getElementById('pay-dp-pct')?.value)||0;
+  const progressCount = parseInt(document.getElementById('pay-progress-count')?.value)||0;
+  const finalPct = parseFloat(document.getElementById('pay-final-pct')?.value)||0;
+  PAYMENT_TERMS = {dpPct, progressCount, finalPct};
+
+  const remaining = Math.max(0, 100 - dpPct - finalPct);
+  const eachProgress = progressCount > 0 ? parseFloat((remaining/progressCount).toFixed(2)) : 0;
+  const total = dpPct + (eachProgress*progressCount) + finalPct;
+
+  // Show warning if doesn't sum to ~100
+  const warnEl = document.getElementById('pay-terms-warning');
+  const badgeEl = document.getElementById('pay-terms-total-badge');
+  const diff = Math.abs(total-100);
+  if(warnEl){ warnEl.style.display = diff>0.1?'block':'none'; warnEl.textContent='⚠ Total = '+total.toFixed(1)+'% (must equal 100%). Adjust percentages.'; }
+  if(badgeEl){ badgeEl.textContent = 'Total: '+total.toFixed(1)+'%'; badgeEl.style.color = diff>0.1?'var(--danger)':'var(--accent3)'; }
+
+  const ct = getTotalSelling() || TOTAL_CONTRACT;
+  const paidMap = {};
+  if(preservePaid) MILESTONES.forEach(m=>{ paidMap[m.label]={paid:m.paid,paidDate:m.paidDate,amount:m.amount}; });
+
+  const newMS = [];
+  let id = 1;
+
+  // Downpayment
+  const dpOld = paidMap['Downpayment']||{};
+  newMS.push({id:id++,label:'Downpayment',trigger:'Upon signing',pct:dpPct+'%',
+    amount: dpOld.paid&&dpOld.amount ? dpOld.amount : Math.round(ct*dpPct/100),
+    notes:'Before mobilization',...MS_COLORS[0],paid:dpOld.paid||false,paidDate:dpOld.paidDate||''});
+
+  // Progress billings
+  for(let i=1;i<=progressCount;i++){
+    const label='Progress Billing '+i;
+    const old=paidMap[label]||{};
+    const colIdx=i%MS_COLORS.length;
+    newMS.push({id:id++,label,trigger:'Progress Billing #'+i,pct:eachProgress+'%',
+      amount:old.paid&&old.amount?old.amount:Math.round(ct*eachProgress/100),
+      notes:'',...MS_COLORS[colIdx],paid:old.paid||false,paidDate:old.paidDate||''});
+  }
+
+  // Final
+  const finalOld = paidMap['Final Billing']||{};
+  newMS.push({id:id++,label:'Final Billing',trigger:'Upon turnover',pct:finalPct+'%',
+    amount:finalOld.paid&&finalOld.amount?finalOld.amount:Math.round(ct*finalPct/100),
+    notes:'Turnover',...MS_COLORS[MS_COLORS.length-1],paid:finalOld.paid||false,paidDate:finalOld.paidDate||''});
+
+  MILESTONES.length=0;
+  newMS.forEach(m=>MILESTONES.push(m));
+  TOTAL_CONTRACT = ct;
+  renderMilestones();
+  updatePayKPIs();
+  autoSave();
+}
+
+function buildPayments(){
+  // Populate setup fields from PAYMENT_TERMS
+  const dpEl=document.getElementById('pay-dp-pct');
+  const pcEl=document.getElementById('pay-progress-count');
+  const fpEl=document.getElementById('pay-final-pct');
+  if(dpEl) dpEl.value=PAYMENT_TERMS.dpPct||30;
+  if(pcEl) pcEl.value=PAYMENT_TERMS.progressCount||1;
+  if(fpEl) fpEl.value=PAYMENT_TERMS.finalPct||10;
+
+  // If no milestones yet, build default
+  if(MILESTONES.length===0) rebuildPaymentTerms(false);
+  else { renderMilestones(); updatePayKPIs(); }
+
+  const badgeEl=document.getElementById('pay-terms-total-badge');
+  if(badgeEl){const t=PAYMENT_TERMS.dpPct+(PAYMENT_TERMS.progressCount>0?(100-PAYMENT_TERMS.dpPct-PAYMENT_TERMS.finalPct):0)+PAYMENT_TERMS.finalPct;badgeEl.textContent='Total: 100%';}
+}
+
+function renderMilestones(){
+  const ct=getTotalSelling()||TOTAL_CONTRACT;
+  document.getElementById('milestone-list').innerHTML=MILESTONES.map(m=>{
+    // Allow editing the actual billed amount
+    return `<div class="milestone-card ${m.paid?'paid':''}">
+      <div style="flex-shrink:0;margin-top:3px"><div class="pay-check ${m.paid?'checked':''}" onclick="togglePay(${m.id})">${m.paid?'✓':''}</div></div>
+      <div class="ms-pct-badge" style="background:${m.bg};border:1px solid ${m.bd}"><span style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:${m.color}">${m.pct}</span></div>
+      <div class="ms-info">
+        <div class="ms-title">${m.label}</div>
+        <div class="ms-trigger">${m.trigger}</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+          <span style="font-size:10px;color:var(--text3)">Amount:</span>
+          <input type="number" value="${m.amount}" style="background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:3px 8px;color:var(--accent);font-family:'DM Mono',monospace;font-size:12px;width:130px;outline:none"
+            onchange="onMilestoneAmtChange(${m.id},this.value)" ${m.paid?'disabled style="opacity:0.6"':''}>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:4px"><span style="font-size:10px;color:var(--text3)">Received:</span><input class="ms-date-input" type="date" value="${m.paidDate}" onchange="setPayDate(${m.id},this.value)" ${!m.paid?'disabled style="opacity:0.4"':''}></div>
+        <div class="ms-paid-on">${m.paid?'✓ '+(m.paidDate?formatDateShort(m.paidDate):'Received'):''}</div>
+      </div>
+      <div style="flex-shrink:0"><span class="badge ${m.paid?'green':'gray'}">${m.paid?'PAID':'PENDING'}</span></div>
+    </div>`;
+  }).join('');
+}
+
+function onMilestoneAmtChange(id,val){
+  const m=MILESTONES.find(x=>x.id===id);
+  if(m){ m.amount=parseFloat(val)||0; updatePayKPIs(); updateCashFlow(); autoSave(); }
+}
+
+function togglePay(id){const m=MILESTONES.find(x=>x.id===id);if(!m)return;m.paid=!m.paid;if(m.paid&&!m.paidDate)m.paidDate=new Date().toISOString().split('T')[0];if(!m.paid)m.paidDate='';renderMilestones();updatePayKPIs();updateCashFlow();updateKPIs();autoSave();}
+function setPayDate(id,v){const m=MILESTONES.find(x=>x.id===id);if(m){m.paidDate=v;updateCashFlow();autoSave();}}
+function updatePayKPIs(){const col=MILESTONES.filter(m=>m.paid).reduce((s,m)=>s+m.amount,0),out=TOTAL_CONTRACT-col,exp=getTotalActual(),net=col-exp,cp=(col/TOTAL_CONTRACT*100).toFixed(1);const se=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};se('pay-collected',fmtS(col));se('pay-collected-pct',cp+'%');se('pay-outstanding',fmtS(out));se('pay-outstanding-pct',(100-parseFloat(cp)).toFixed(1)+'%');se('pay-expenses',fmtS(exp));se('pay-net',(net>=0?'+':'-')+fmtS(Math.abs(net)));if(document.getElementById('pay-net'))document.getElementById('pay-net').className='kpi-value '+(net>=0?'pos':'neg');se('pay-paid-count',MILESTONES.filter(m=>m.paid).length+' of '+MILESTONES.length);se('pay-balance-badge','Net: '+(net>=0?'+':'-')+fmtS(Math.abs(net)));buildWaterfall(col,exp,net,out);}
 function buildWaterfall(c,e,n,o){const el=document.getElementById('cashflow-waterfall');if(!el)return;el.innerHTML=[{i:'↓',c:'in',l:'Inflows',v:c,p:'+',c2:'pos'},{i:'↑',c:'out',l:'Outflows',v:e,p:'–',c2:'neg'},{i:'◎',c:'bal',l:'Net',v:n,p:n>=0?'+':'–',c2:n>=0?'pos':'neg'},{i:'⧗',c:'out',l:'Unbilled',v:o,p:'',c2:'neutral'}].map(r=>`<div class="wf-row"><div class="wf-row-icon ${r.c}">${r.i}</div><div class="wf-row-label">${r.l}</div><div class="wf-row-val ${r.c2}">${r.p}${fmt2(Math.abs(r.v))}</div></div>`).join('');}
 function updateCashFlow(){const col=MILESTONES.filter(m=>m.paid).reduce((s,m)=>s+m.amount,0),exp=getTotalActual(),net=col-exp,out=TOTAL_CONTRACT-col,cp=(col/TOTAL_CONTRACT*100).toFixed(1);const se=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};se('cf-collected',fmtS(col));se('cf-collected-pct',cp+'%');se('cf-outflows',fmtS(exp));se('cf-net',(net>=0?'+':'-')+fmtS(Math.abs(net)));const ne=document.getElementById('cf-net');if(ne)ne.className='kpi-value '+(net>=0?'pos':'neg');se('cf-outstanding',fmtS(out));se('cf-outstanding-pct',(100-parseFloat(cp)).toFixed(1)+'%');}
 function buildCashFlowLog(){const tb=document.getElementById('cashflow-tbody');if(!tb)return;let tx=[];MILESTONES.filter(m=>m.paid).forEach(m=>tx.push({date:m.paidDate,type:'IN',desc:m.label,inf:m.amount,out:0,st:'Received'}));expenses.forEach(e=>tx.push({date:e.date,type:'OUT',desc:(e.desc||e.code)+(e.supplier?' — '+e.supplier:''),inf:0,out:parseFloat(e.amount)||0,st:e.mode}));MILESTONES.filter(m=>!m.paid).forEach(m=>tx.push({date:'',type:'PEN',desc:m.label,inf:m.amount,out:0,st:'Pending'}));tx.sort((a,b)=>{if(a.type==='PEN'&&b.type!=='PEN')return 1;if(b.type==='PEN'&&a.type!=='PEN')return-1;if(a.date&&b.date)return a.date.localeCompare(b.date);return 0;});let bal=0;tb.innerHTML=tx.map(t=>{const ip=t.type==='PEN';if(!ip)bal+=t.inf-t.out;return`<tr style="${ip?'opacity:0.4':''}"><td style="color:var(--text3)">${t.date?formatDateShort(t.date):'–'}</td><td><span class="badge ${t.type==='IN'?'green':t.type==='OUT'?'red':'gray'}">${t.type==='IN'?'↓ IN':t.type==='OUT'?'↑ OUT':'⧗'}</span></td><td>${t.desc}</td><td class="tx-inflow">${t.inf>0?fmt2(t.inf):'–'}</td><td class="tx-outflow">${t.out>0?fmt2(t.out):'–'}</td><td class="tx-balance">${ip?'–':(bal>=0?'+':'')+fmt2(bal)}</td><td><span class="badge ${t.type==='IN'?'green':t.type==='OUT'?'orange':'gray'}">${t.st}</span></td></tr>`;}).join('');}
@@ -1924,7 +2075,7 @@ function updateKPIs(){
     ? fmtS(bt)+' · VAT Excl. <span style="color:var(--accent3);margin-left:4px">🔒 Locked</span>'
     : (bt>0?fmtS(bt)+' · ':'')+'<span style="color:var(--accent2)">⚠ Contract not yet locked</span>';
 }
-function buildCompare(){const bm={};COST_CODES_BUDGET.forEach(c=>bm[c.code]=c.budget);const contractItems=COST_CODES_SELLING.filter(c=>!isInternalOnly(c));const tb=contractItems.reduce((s,c)=>s+(bm[c.code]||0),0),ts=getTotalSelling(),gp=ts-tb;document.getElementById('cmp-budget').textContent=fmtS(tb);document.getElementById('cmp-selling').textContent=fmtS(ts);document.getElementById('cmp-profit').textContent=fmtS(gp);document.getElementById('cmp-margin').textContent=(gp/ts*100).toFixed(1)+'%';let lc='';document.querySelector('#compare-table tbody').innerHTML=contractItems.map(c=>{const b=bm[c.code]||0,mk=c.budget-b,mp=b>0?(mk/b*100):0;let cr='';if(c.cat!==lc){cr=`<tr class="section-row"><td colspan="6">${c.cat}</td></tr>`;lc=c.cat;}return cr+`<tr><td style="color:var(--text3)">${c.code}</td><td>${c.desc}</td><td style="color:var(--accent)">₱${b.toLocaleString()}</td><td style="color:var(--accent2)">₱${c.budget.toLocaleString()}</td><td class="${mk>0?'pos':mk<0?'neg':'neutral'}">${mk>=0?'+':''}₱${Math.abs(mk).toLocaleString()}</td><td class="${mk>0?'pos':mk<0?'neg':'neutral'}">${mp.toFixed(1)}%</td></tr>`;}).join('');}
+function buildCompare(){const contractItems=COST_CODES_SELLING.filter(c=>!isInternalOnly(c));const tb=contractItems.reduce((s,c)=>s+(c.budget||0),0),ts=getTotalSelling(),gp=ts-tb;document.getElementById('cmp-budget').textContent=fmtS(tb);document.getElementById('cmp-selling').textContent=fmtS(ts);document.getElementById('cmp-profit').textContent=fmtS(gp);document.getElementById('cmp-margin').textContent=(gp/ts*100).toFixed(1)+'%';let lc='';document.querySelector('#compare-table tbody').innerHTML=contractItems.map(c=>{const b=bm[c.code]||0,mk=c.budget-b,mp=b>0?(mk/b*100):0;let cr='';if(c.cat!==lc){cr=`<tr class="section-row"><td colspan="6">${c.cat}</td></tr>`;lc=c.cat;}const b=c.budget||0,sell=c.selling||0,mk=sell-b,mp=b>0?((mk/b)*100):0;let cr='';if(c.cat!==lc){cr=`<tr class="section-row"><td colspan="6">${c.cat}</td></tr>`;lc=c.cat;}return cr+`<tr><td style="color:var(--text3)">${c.code}</td><td>${c.desc}</td><td style="color:var(--accent)">₱${b.toLocaleString()}</td><td style="color:var(--accent2)">₱${sell.toLocaleString()}</td><td class="${mk>0?'pos':mk<0?'neg':'neutral'}">${mk>=0?'+':''}₱${Math.abs(mk).toLocaleString()}</td><td class="${mk>0?'pos':mk<0?'neg':'neutral'}">${mp.toFixed(1)}%</td></tr>`;}).join('');}
 
 // ============================================================
 // ACCESS CONTROL (Client vs Contractor mode)
@@ -2274,6 +2425,7 @@ function getStateObject() {
     costCodesBudget: COST_CODES_BUDGET,
     schedule: SCHEDULE,
     milestones: MILESTONES,
+    paymentTerms: PAYMENT_TERMS,
     expenses,
     variationOrders,
     challenges,
@@ -2394,7 +2546,11 @@ function applyState(s) {
         }
       }
     }
-    if(s.milestones) { s.milestones.forEach((m,i)=>{ if(MILESTONES[i]) Object.assign(MILESTONES[i], m); }); }
+    if(s.paymentTerms) Object.assign(PAYMENT_TERMS, s.paymentTerms);
+    if(s.milestones && s.milestones.length > 0) {
+      MILESTONES.length=0;
+      s.milestones.forEach(m=>MILESTONES.push(m));
+    }
     if(s.expenses) { expenses.length=0; s.expenses.forEach(e=>expenses.push(e)); }
     if(s.variationOrders) { variationOrders.length=0; s.variationOrders.forEach(v=>variationOrders.push(v)); }
     if(s.challenges) { challenges.length=0; s.challenges.forEach(c=>challenges.push(c)); }
