@@ -205,6 +205,7 @@ canvas { width: 100% !important; }
       <div class="nav-item contractor-only" onclick="showPage('expenses',this)"><span class="icon">✦</span> Expenses</div>
       <div class="nav-section contractor-only">Analysis</div>
       <div class="nav-item contractor-only" onclick="showPage('compare',this)"><span class="icon">⇄</span> Budget vs Selling</div>
+      <div class="nav-item" onclick="showPage('help',this)" style="margin-top:auto"><span class="icon">?</span> Help</div>
       <!-- Unlock/Lock access -->
       <div style="margin-top:auto;padding:12px 8px;border-top:1px solid var(--border)">
         <div id="access-lock-btn" class="nav-item" onclick="toggleAccessMode()" style="background:var(--bg3);justify-content:center;color:var(--text3)">
@@ -705,6 +706,247 @@ canvas { width: 100% !important; }
         <div class="panel full-panel"><div style="overflow-x:auto"><table class="tbl" id="compare-table"><thead><tr><th>Code</th><th>Description</th><th>Budget</th><th>Selling</th><th>Markup</th><th>%</th></tr></thead><tbody></tbody></table></div></div>
       </div>
 
+      <!-- HELP PAGE -->
+      <div class="page" id="page-help">
+        <div class="section-header"><div><h2>How to Use Gin-gineer Monitor</h2><p>A step-by-step guide for setting up and running a project</p></div></div>
+
+        <!-- FLOWCHART SVG -->
+        <div class="panel full-panel" style="padding:0;overflow:hidden">
+          <div style="padding:20px 24px;overflow-x:auto">
+            <svg width="100%" viewBox="0 0 700 1060" style="min-width:560px;display:block">
+              <defs>
+                <marker id="harrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                  <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </marker>
+              </defs>
+
+              <!-- PHASE LABELS -->
+              <rect x="0" y="30" width="90" height="28" rx="5" fill="rgba(79,195,161,0.15)"/>
+              <text x="45" y="44" text-anchor="middle" dominant-baseline="central" style="font-size:10px;fill:var(--accent3);font-family:Syne,sans-serif;font-weight:700">PHASE 1 · HUB</text>
+              <rect x="0" y="130" width="90" height="28" rx="5" fill="rgba(124,106,255,0.15)"/>
+              <text x="45" y="144" text-anchor="middle" dominant-baseline="central" style="font-size:10px;fill:#7c6aff;font-family:Syne,sans-serif;font-weight:700">PHASE 2 · CREATE</text>
+              <rect x="0" y="230" width="90" height="28" rx="5" fill="rgba(245,200,66,0.15)"/>
+              <text x="45" y="244" text-anchor="middle" dominant-baseline="central" style="font-size:10px;fill:var(--accent);font-family:Syne,sans-serif;font-weight:700">PHASE 3 · SETUP</text>
+              <rect x="0" y="560" width="90" height="28" rx="5" fill="rgba(232,132,58,0.15)"/>
+              <text x="45" y="574" text-anchor="middle" dominant-baseline="central" style="font-size:10px;fill:var(--accent2);font-family:Syne,sans-serif;font-weight:700">PHASE 4 · TRACK</text>
+              <rect x="0" y="840" width="90" height="28" rx="5" fill="rgba(53,139,212,0.15)"/>
+              <text x="45" y="854" text-anchor="middle" dominant-baseline="central" style="font-size:10px;fill:#4fc3a1;font-family:Syne,sans-serif;font-weight:700">PHASE 5 · CLIENT</text>
+
+              <!-- DIVIDER LINE -->
+              <line x1="96" y1="20" x2="96" y2="1040" stroke="var(--border)" stroke-width="0.5"/>
+
+              <!-- STEP HELPER: rounded rect function via groups -->
+
+              <!-- ── PHASE 1 ── -->
+              <g>
+                <rect x="106" y="30" width="155" height="48" rx="8" fill="rgba(79,195,161,0.12)" stroke="rgba(79,195,161,0.5)" stroke-width="1"/>
+                <text x="183" y="50" text-anchor="middle" dominant-baseline="central" style="font-size:12px;fill:var(--accent3);font-family:Syne,sans-serif;font-weight:700">Open Hub URL</text>
+                <text x="183" y="66" text-anchor="middle" dominant-baseline="central" style="font-size:10px;fill:var(--text3);font-family:'DM Mono',monospace">index.html</text>
+              </g>
+              <line x1="261" y1="54" x2="285" y2="54" stroke="var(--text3)" stroke-width="1" marker-end="url(#harrow)"/>
+              <g>
+                <rect x="287" y="30" width="155" height="48" rx="8" fill="rgba(79,195,161,0.12)" stroke="rgba(79,195,161,0.5)" stroke-width="1"/>
+                <text x="364" y="50" text-anchor="middle" dominant-baseline="central" style="font-size:12px;fill:var(--accent3);font-family:Syne,sans-serif;font-weight:700">Enter Passcode</text>
+                <text x="364" y="66" text-anchor="middle" dominant-baseline="central" style="font-size:10px;fill:var(--text3);font-family:'DM Mono',monospace">Master passcode</text>
+              </g>
+              <line x1="442" y1="54" x2="466" y2="54" stroke="var(--text3)" stroke-width="1" marker-end="url(#harrow)"/>
+              <g>
+                <rect x="468" y="30" width="218" height="48" rx="8" fill="rgba(79,195,161,0.12)" stroke="rgba(79,195,161,0.5)" stroke-width="1"/>
+                <text x="577" y="50" text-anchor="middle" dominant-baseline="central" style="font-size:12px;fill:var(--accent3);font-family:Syne,sans-serif;font-weight:700">Hub Dashboard</text>
+                <text x="577" y="66" text-anchor="middle" dominant-baseline="central" style="font-size:10px;fill:var(--text3);font-family:'DM Mono',monospace">All projects + KPIs</text>
+              </g>
+              <!-- down arrow from hub to create -->
+              <line x1="577" y1="78" x2="577" y2="100" stroke="var(--text3)" stroke-width="1"/>
+              <line x1="577" y1="100" x2="364" y2="100" stroke="var(--text3)" stroke-width="1"/>
+              <line x1="364" y1="100" x2="364" y2="128" stroke="var(--text3)" stroke-width="1" marker-end="url(#harrow)"/>
+
+              <!-- ── PHASE 2 ── -->
+              <g>
+                <rect x="106" y="130" width="190" height="48" rx="8" fill="rgba(124,106,255,0.12)" stroke="rgba(124,106,255,0.5)" stroke-width="1"/>
+                <text x="201" y="150" text-anchor="middle" dominant-baseline="central" style="font-size:12px;fill:#7c6aff;font-family:Syne,sans-serif;font-weight:700">+ New Project</text>
+                <text x="201" y="166" text-anchor="middle" dominant-baseline="central" style="font-size:10px;fill:var(--text3);font-family:'DM Mono',monospace">Name, ID, passcode, whitelist</text>
+              </g>
+              <line x1="296" y1="154" x2="316" y2="154" stroke="var(--text3)" stroke-width="1" marker-end="url(#harrow)"/>
+              <g>
+                <rect x="318" y="130" width="190" height="48" rx="8" fill="rgba(124,106,255,0.12)" stroke="rgba(124,106,255,0.5)" stroke-width="1"/>
+                <text x="413" y="150" text-anchor="middle" dominant-baseline="central" style="font-size:12px;fill:#7c6aff;font-family:Syne,sans-serif;font-weight:700">Copy & Share Link</text>
+                <text x="413" y="166" text-anchor="middle" dominant-baseline="central" style="font-size:10px;fill:var(--text3);font-family:'DM Mono',monospace">project.html?id=xxx</text>
+              </g>
+              <!-- down to setup -->
+              <line x1="413" y1="178" x2="413" y2="200" stroke="var(--text3)" stroke-width="1"/>
+              <line x1="413" y1="200" x2="250" y2="200" stroke="var(--text3)" stroke-width="1"/>
+              <line x1="250" y1="200" x2="250" y2="228" stroke="var(--text3)" stroke-width="1" marker-end="url(#harrow)"/>
+
+              <!-- ── PHASE 3 SETUP ── -->
+              <!-- Step 1 -->
+              <text x="113" y="248" dominant-baseline="central" style="font-size:9px;fill:var(--accent);font-family:'DM Mono',monospace;font-weight:600">STEP 1</text>
+              <g>
+                <rect x="106" y="258" width="175" height="56" rx="8" fill="rgba(245,200,66,0.1)" stroke="rgba(245,200,66,0.4)" stroke-width="1"/>
+                <text x="193" y="278" text-anchor="middle" dominant-baseline="central" style="font-size:12px;fill:var(--accent);font-family:Syne,sans-serif;font-weight:700">Settings</text>
+                <text x="193" y="295" text-anchor="middle" dominant-baseline="central" style="font-size:10px;fill:var(--text3);font-family:'DM Mono',monospace">Title · dates · duration</text>
+              </g>
+              <!-- Step 2 -->
+              <text x="302" y="248" dominant-baseline="central" style="font-size:9px;fill:var(--accent);font-family:'DM Mono',monospace;font-weight:600">STEP 2 — must lock</text>
+              <g>
+                <rect x="298" y="258" width="392" height="56" rx="8" fill="rgba(245,200,66,0.1)" stroke="rgba(245,200,66,0.4)" stroke-width="1"/>
+                <text x="494" y="278" text-anchor="middle" dominant-baseline="central" style="font-size:12px;fill:var(--accent);font-family:Syne,sans-serif;font-weight:700">Contract</text>
+                <text x="494" y="295" text-anchor="middle" dominant-baseline="central" style="font-size:10px;fill:var(--text3);font-family:'DM Mono',monospace">Add categories + line items → 🔒 Lock</text>
+              </g>
+              <line x1="281" y1="286" x2="296" y2="286" stroke="var(--accent)" stroke-width="1" stroke-dasharray="3 2"/>
+              <!-- down -->
+              <line x1="250" y1="314" x2="250" y2="338" stroke="var(--text3)" stroke-width="1" marker-end="url(#harrow)"/>
+
+              <!-- Step 3 -->
+              <text x="113" y="350" dominant-baseline="central" style="font-size:9px;fill:var(--accent);font-family:'DM Mono',monospace;font-weight:600">STEP 3</text>
+              <g>
+                <rect x="106" y="360" width="220" height="56" rx="8" fill="rgba(245,200,66,0.1)" stroke="rgba(245,200,66,0.4)" stroke-width="1"/>
+                <text x="216" y="380" text-anchor="middle" dominant-baseline="central" style="font-size:12px;fill:var(--accent);font-family:Syne,sans-serif;font-weight:700">Budget Monitoring</text>
+                <text x="216" y="397" text-anchor="middle" dominant-baseline="central" style="font-size:10px;fill:var(--text3);font-family:'DM Mono',monospace">Set budget per item → 🔒 Lock</text>
+              </g>
+              <!-- Step 4 -->
+              <text x="348" y="350" dominant-baseline="central" style="font-size:9px;fill:var(--accent);font-family:'DM Mono',monospace;font-weight:600">STEP 4 — requires contract lock</text>
+              <g>
+                <rect x="344" y="360" width="346" height="56" rx="8" fill="rgba(245,200,66,0.1)" stroke="rgba(245,200,66,0.4)" stroke-width="1"/>
+                <text x="517" y="380" text-anchor="middle" dominant-baseline="central" style="font-size:12px;fill:var(--accent);font-family:Syne,sans-serif;font-weight:700">Gantt & S-Curve</text>
+                <text x="517" y="397" text-anchor="middle" dominant-baseline="central" style="font-size:10px;fill:var(--text3);font-family:'DM Mono',monospace">Set task dates → 🔒 Lock baseline</text>
+              </g>
+              <line x1="326" y1="388" x2="342" y2="388" stroke="var(--accent)" stroke-width="1" stroke-dasharray="3 2"/>
+              <!-- down -->
+              <line x1="250" y1="416" x2="250" y2="440" stroke="var(--text3)" stroke-width="1" marker-end="url(#harrow)"/>
+
+              <!-- Step 5 -->
+              <text x="113" y="452" dominant-baseline="central" style="font-size:9px;fill:var(--accent);font-family:'DM Mono',monospace;font-weight:600">STEP 5</text>
+              <g>
+                <rect x="106" y="462" width="220" height="56" rx="8" fill="rgba(245,200,66,0.1)" stroke="rgba(245,200,66,0.4)" stroke-width="1"/>
+                <text x="216" y="482" text-anchor="middle" dominant-baseline="central" style="font-size:12px;fill:var(--accent);font-family:Syne,sans-serif;font-weight:700">Payments Setup</text>
+                <text x="216" y="499" text-anchor="middle" dominant-baseline="central" style="font-size:10px;fill:var(--text3);font-family:'DM Mono',monospace">DP% · billings · final%</text>
+              </g>
+              <!-- Step 6 award -->
+              <text x="348" y="452" dominant-baseline="central" style="font-size:9px;fill:var(--accent);font-family:'DM Mono',monospace;font-weight:600">STEP 6</text>
+              <g>
+                <rect x="344" y="462" width="346" height="56" rx="8" fill="rgba(245,200,66,0.1)" stroke="rgba(245,200,66,0.4)" stroke-width="1"/>
+                <text x="517" y="482" text-anchor="middle" dominant-baseline="central" style="font-size:12px;fill:var(--accent);font-family:Syne,sans-serif;font-weight:700">Set Award Status</text>
+                <text x="517" y="499" text-anchor="middle" dominant-baseline="central" style="font-size:10px;fill:var(--text3);font-family:'DM Mono',monospace">Pending → Awarded or Lost Bid</text>
+              </g>
+              <!-- award branches -->
+              <line x1="517" y1="518" x2="517" y2="536" stroke="var(--text3)" stroke-width="1"/>
+              <line x1="400" y1="536" x2="634" y2="536" stroke="var(--text3)" stroke-width="1"/>
+              <line x1="400" y1="536" x2="400" y2="554" stroke="var(--accent3)" stroke-width="1.5" marker-end="url(#harrow)"/>
+              <line x1="634" y1="536" x2="634" y2="554" stroke="var(--danger)" stroke-width="1.5" marker-end="url(#harrow)"/>
+              <g>
+                <rect x="330" y="556" width="140" height="38" rx="8" fill="rgba(79,195,161,0.15)" stroke="rgba(79,195,161,0.6)" stroke-width="1"/>
+                <text x="400" y="575" text-anchor="middle" dominant-baseline="central" style="font-size:11px;fill:var(--accent3);font-family:Syne,sans-serif;font-weight:700">Awarded — Active</text>
+              </g>
+              <g>
+                <rect x="564" y="556" width="140" height="38" rx="8" fill="rgba(232,85,85,0.15)" stroke="rgba(232,85,85,0.6)" stroke-width="1"/>
+                <text x="634" y="575" text-anchor="middle" dominant-baseline="central" style="font-size:11px;fill:var(--danger);font-family:Syne,sans-serif;font-weight:700">Lost Bid</text>
+              </g>
+              <line x1="400" y1="594" x2="400" y2="618" stroke="var(--accent3)" stroke-width="1.5" marker-end="url(#harrow)"/>
+
+              <!-- ── PHASE 4 TRACK ── -->
+              <g>
+                <rect x="106" y="620" width="175" height="56" rx="8" fill="rgba(232,132,58,0.12)" stroke="rgba(232,132,58,0.5)" stroke-width="1"/>
+                <text x="193" y="640" text-anchor="middle" dominant-baseline="central" style="font-size:12px;fill:var(--accent2);font-family:Syne,sans-serif;font-weight:700">Log Expenses</text>
+                <text x="193" y="657" text-anchor="middle" dominant-baseline="central" style="font-size:10px;fill:var(--text3);font-family:'DM Mono',monospace">Code · supplier · amount</text>
+              </g>
+              <line x1="281" y1="648" x2="305" y2="648" stroke="var(--text3)" stroke-width="1" marker-end="url(#harrow)"/>
+              <g>
+                <rect x="307" y="620" width="175" height="56" rx="8" fill="rgba(232,132,58,0.12)" stroke="rgba(232,132,58,0.5)" stroke-width="1"/>
+                <text x="394" y="640" text-anchor="middle" dominant-baseline="central" style="font-size:12px;fill:var(--accent2);font-family:Syne,sans-serif;font-weight:700">Update % Done</text>
+                <text x="394" y="657" text-anchor="middle" dominant-baseline="central" style="font-size:10px;fill:var(--text3);font-family:'DM Mono',monospace">Gantt → each task</text>
+              </g>
+              <line x1="482" y1="648" x2="506" y2="648" stroke="var(--text3)" stroke-width="1" marker-end="url(#harrow)"/>
+              <g>
+                <rect x="508" y="620" width="180" height="56" rx="8" fill="rgba(232,132,58,0.12)" stroke="rgba(232,132,58,0.5)" stroke-width="1"/>
+                <text x="598" y="640" text-anchor="middle" dominant-baseline="central" style="font-size:12px;fill:var(--accent2);font-family:Syne,sans-serif;font-weight:700">Mark Payments</text>
+                <text x="598" y="657" text-anchor="middle" dominant-baseline="central" style="font-size:10px;fill:var(--text3);font-family:'DM Mono',monospace">Payments → paid</text>
+              </g>
+              <line x1="394" y1="676" x2="394" y2="700" stroke="var(--text3)" stroke-width="1" marker-end="url(#harrow)"/>
+
+              <!-- Row 2 track -->
+              <g>
+                <rect x="106" y="702" width="175" height="56" rx="8" fill="rgba(232,132,58,0.12)" stroke="rgba(232,132,58,0.5)" stroke-width="1"/>
+                <text x="193" y="722" text-anchor="middle" dominant-baseline="central" style="font-size:12px;fill:var(--accent2);font-family:Syne,sans-serif;font-weight:700">S-Curve Updates</text>
+                <text x="193" y="739" text-anchor="middle" dominant-baseline="central" style="font-size:10px;fill:var(--text3);font-family:'DM Mono',monospace">Planned vs actual cost</text>
+              </g>
+              <line x1="281" y1="730" x2="305" y2="730" stroke="var(--text3)" stroke-width="1" marker-end="url(#harrow)"/>
+              <g>
+                <rect x="307" y="702" width="175" height="56" rx="8" fill="rgba(232,132,58,0.12)" stroke="rgba(232,132,58,0.5)" stroke-width="1"/>
+                <text x="394" y="722" text-anchor="middle" dominant-baseline="central" style="font-size:12px;fill:var(--accent2);font-family:Syne,sans-serif;font-weight:700">Budget vs Selling</text>
+                <text x="394" y="739" text-anchor="middle" dominant-baseline="central" style="font-size:10px;fill:var(--text3);font-family:'DM Mono',monospace">Profit + margin per item</text>
+              </g>
+              <line x1="482" y1="730" x2="506" y2="730" stroke="var(--text3)" stroke-width="1" marker-end="url(#harrow)"/>
+              <g>
+                <rect x="508" y="702" width="180" height="56" rx="8" fill="rgba(232,132,58,0.12)" stroke="rgba(232,132,58,0.5)" stroke-width="1"/>
+                <text x="598" y="722" text-anchor="middle" dominant-baseline="central" style="font-size:12px;fill:var(--accent2);font-family:Syne,sans-serif;font-weight:700">Hub Auto-Syncs</text>
+                <text x="598" y="739" text-anchor="middle" dominant-baseline="central" style="font-size:10px;fill:var(--text3);font-family:'DM Mono',monospace">Value · progress · status</text>
+              </g>
+
+              <!-- Ongoing loop arrow -->
+              <path d="M106 730 Q80 730 80 648 Q80 566 106 648" fill="none" stroke="var(--text3)" stroke-width="0.5" stroke-dasharray="3 3" marker-end="url(#harrow)"/>
+              <text x="62" y="688" text-anchor="middle" dominant-baseline="central" style="font-size:9px;fill:var(--text3);font-family:'DM Mono',monospace" transform="rotate(-90,62,688)">ongoing</text>
+
+              <line x1="394" y1="758" x2="394" y2="782" stroke="var(--text3)" stroke-width="1" marker-end="url(#harrow)"/>
+
+              <!-- ── PHASE 5 CLIENT ── -->
+              <g>
+                <rect x="106" y="784" width="175" height="56" rx="8" fill="rgba(79,195,161,0.1)" stroke="rgba(41,182,246,0.5)" stroke-width="1"/>
+                <text x="193" y="804" text-anchor="middle" dominant-baseline="central" style="font-size:12px;fill:#29b6f6;font-family:Syne,sans-serif;font-weight:700">Client Opens Link</text>
+                <text x="193" y="821" text-anchor="middle" dominant-baseline="central" style="font-size:10px;fill:var(--text3);font-family:'DM Mono',monospace">Email gate → verified</text>
+              </g>
+              <line x1="281" y1="812" x2="305" y2="812" stroke="var(--text3)" stroke-width="1" marker-end="url(#harrow)"/>
+              <g>
+                <rect x="307" y="784" width="175" height="56" rx="8" fill="rgba(79,195,161,0.1)" stroke="rgba(41,182,246,0.5)" stroke-width="1"/>
+                <text x="394" y="804" text-anchor="middle" dominant-baseline="central" style="font-size:12px;fill:#29b6f6;font-family:Syne,sans-serif;font-weight:700">Dashboard + Gantt</text>
+                <text x="394" y="821" text-anchor="middle" dominant-baseline="central" style="font-size:10px;fill:var(--text3);font-family:'DM Mono',monospace">Progress · scope (read only)</text>
+              </g>
+              <line x1="482" y1="812" x2="506" y2="812" stroke="var(--text3)" stroke-width="1" marker-end="url(#harrow)"/>
+              <g>
+                <rect x="508" y="784" width="180" height="56" rx="8" fill="rgba(79,195,161,0.1)" stroke="rgba(41,182,246,0.5)" stroke-width="1"/>
+                <text x="598" y="804" text-anchor="middle" dominant-baseline="central" style="font-size:12px;fill:#29b6f6;font-family:Syne,sans-serif;font-weight:700">Comments</text>
+                <text x="598" y="821" text-anchor="middle" dominant-baseline="central" style="font-size:10px;fill:var(--text3);font-family:'DM Mono',monospace">Client passcode required</text>
+              </g>
+
+              <!-- LEGEND -->
+              <rect x="106" y="880" width="10" height="10" rx="2" fill="rgba(79,195,161,0.4)"/>
+              <text x="122" y="885" dominant-baseline="central" style="font-size:10px;fill:var(--text3);font-family:'DM Mono',monospace">Hub / Access</text>
+              <rect x="200" y="880" width="10" height="10" rx="2" fill="rgba(124,106,255,0.4)"/>
+              <text x="216" y="885" dominant-baseline="central" style="font-size:10px;fill:var(--text3);font-family:'DM Mono',monospace">Create</text>
+              <rect x="270" y="880" width="10" height="10" rx="2" fill="rgba(245,200,66,0.4)"/>
+              <text x="286" y="885" dominant-baseline="central" style="font-size:10px;fill:var(--text3);font-family:'DM Mono',monospace">Setup (one-time)</text>
+              <rect x="410" y="880" width="10" height="10" rx="2" fill="rgba(232,132,58,0.4)"/>
+              <text x="426" y="885" dominant-baseline="central" style="font-size:10px;fill:var(--text3);font-family:'DM Mono',monospace">Track (ongoing)</text>
+              <rect x="545" y="880" width="10" height="10" rx="2" fill="rgba(41,182,246,0.4)"/>
+              <text x="561" y="885" dominant-baseline="central" style="font-size:10px;fill:var(--text3);font-family:'DM Mono',monospace">Client</text>
+
+              <!-- NOTE -->
+              <rect x="106" y="900" width="582" height="36" rx="6" fill="rgba(245,200,66,0.06)" stroke="rgba(245,200,66,0.2)" stroke-width="1"/>
+              <text x="397" y="918" text-anchor="middle" dominant-baseline="central" style="font-size:10px;fill:var(--text3);font-family:'DM Mono',monospace">⚠ Locking order: Contract must be locked before Gantt baseline. Budget can be locked independently.</text>
+            </svg>
+          </div>
+        </div>
+
+        <!-- QUICK REFERENCE CARDS -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-top:16px">
+          <div class="panel"><div class="panel-header"><span class="panel-title">🔐 Access & Roles</span></div><div class="panel-body" style="font-size:11px;line-height:1.8;color:var(--text2)">
+            <b style="color:var(--accent)">Contractor</b> — Full access. Enter master passcode on any project to unlock all tabs, contract, budget, expenses, and payments.<br>
+            <b style="color:var(--accent3)">Client</b> — Dashboard and Gantt only (read-only). Can post comments using client passcode.<br>
+            <b style="color:#7c6aff">Hub</b> — Only you. Locked behind master passcode. Clients never see this page.
+          </div></div>
+          <div class="panel"><div class="panel-header"><span class="panel-title">🔒 Locking Rules</span></div><div class="panel-body" style="font-size:11px;line-height:1.8;color:var(--text2)">
+            <b style="color:var(--accent)">Contract lock</b> — Required first. Finalizes line items and defines scope for Gantt + Budget.<br>
+            <b style="color:var(--accent)">Gantt lock</b> — Sets the baseline schedule. Requires contract to be locked first.<br>
+            <b style="color:var(--accent)">Budget lock</b> — Locks internal budget percentages. Can be done independently.
+          </div></div>
+          <div class="panel"><div class="panel-header"><span class="panel-title">💰 Payment Terms</span></div><div class="panel-body" style="font-size:11px;line-height:1.8;color:var(--text2)">
+            Set <b style="color:var(--accent)">Downpayment %</b>, number of <b style="color:var(--accent)">Progress Billings</b>, and <b style="color:var(--accent)">Final Billing %</b>. The remaining % is split equally across all progress billings. Edit individual billing amounts as needed — paid billings keep their actual amount.
+          </div></div>
+          <div class="panel"><div class="panel-header"><span class="panel-title">📊 Award Pipeline</span></div><div class="panel-body" style="font-size:11px;line-height:1.8;color:var(--text2)">
+            New projects start as <b style="color:var(--accent2)">Pending Award</b>. Once won, mark as <b style="color:var(--accent3)">Awarded → Active</b> — contract value syncs to hub. If lost, mark as <b style="color:var(--danger)">Not Awarded</b> — moves to Lost Bids on hub. KPIs only count awarded projects.
+          </div></div>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -933,7 +1175,7 @@ function showPage(id,el){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
-  const t={settings:'Settings',dashboard:'Dashboard',gantt:'Gantt Chart & Progress',contract:'Contract Setup',budget:'Budget Monitoring',payments:'Payments',cashflow:'Cash Flow',expenses:'Expenses',compare:'Budget vs Selling'};
+  const t={settings:'Settings',dashboard:'Dashboard',gantt:'Gantt Chart & Progress',contract:'Contract Setup',budget:'Budget Monitoring',payments:'Payments',cashflow:'Cash Flow',expenses:'Expenses',compare:'Budget vs Selling',help:'Help & Guide'};
   document.getElementById('pageTitle').textContent=t[id]||id;
   if(el) el.classList.add('active');
   if(id==='gantt') { buildGantt(); buildSCurve(); }
