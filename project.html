@@ -1005,17 +1005,44 @@ const COST_CODES_SELLING = [];
 
 const COST_CODES_BUDGET = [];
 
-const SCURVE_PLANNED = [
-  {day:1,cPct:1.83},{day:2,cPct:3.66},{day:3,cPct:5.49},{day:4,cPct:5.72},{day:5,cPct:5.95},
-  {day:6,cPct:8.30},{day:7,cPct:10.64},{day:8,cPct:13.15},{day:9,cPct:15.67},{day:10,cPct:18.18},
-  {day:11,cPct:20.70},{day:12,cPct:23.22},{day:13,cPct:25.92},{day:14,cPct:28.62},{day:15,cPct:31.32},
-  {day:16,cPct:33.48},{day:17,cPct:35.72},{day:18,cPct:37.96},{day:19,cPct:40.20},{day:20,cPct:41.25},
-  {day:21,cPct:42.29},{day:22,cPct:43.26},{day:23,cPct:46.85},{day:24,cPct:50.44},{day:25,cPct:54.18},
-  {day:26,cPct:57.52},{day:27,cPct:60.86},{day:28,cPct:65.60},{day:29,cPct:69.44},{day:30,cPct:74.65},
-  {day:31,cPct:79.86},{day:32,cPct:84.83},{day:33,cPct:88.34},{day:34,cPct:89.62},{day:35,cPct:90.91},
-  {day:36,cPct:92.19},{day:37,cPct:93.27},{day:38,cPct:94.34},{day:39,cPct:95.42},{day:40,cPct:95.65},
-  {day:41,cPct:95.88},{day:42,cPct:96.11},{day:43,cPct:96.87},{day:44,cPct:98.44},{day:45,cPct:100.00},
-];
+// Planned S-Curve — computed dynamically from SCHEDULE + contract weights
+// Returns array of length (TD+1) where index = day, value = cumulative %
+function computePlannedCurve(TD){
+  const tasks = SCHEDULE.filter(t=>!t.section);
+  const totalSelling = getTotalSelling();
+  if(!tasks.length || totalSelling<=0 || !scheduleLocked){
+    // Fallback: linear 0→100% over project duration
+    return Array.from({length:TD+1},(_,d)=>d===0?0:parseFloat((d/TD*100).toFixed(2)));
+  }
+  // Build a daily spend array (budget distributed evenly across task duration)
+  const daily = new Array(TD+1).fill(0);
+  for(const t of tasks){
+    // Find contract selling value for this task
+    const selling = (() => {
+      const match = COST_CODES_SELLING.find(c=>!isInternalOnly(c)&&(
+        c.desc===t.name ||
+        c.desc.toLowerCase().includes((t.name||'').split(' ')[0].toLowerCase()) ||
+        (t.name||'').toLowerCase().includes((c.desc||'').split(' ')[0].toLowerCase())
+      ));
+      return match ? (match.selling||0) : (totalSelling/Math.max(tasks.length,1));
+    })();
+    const start = t.targetStartDay||0;
+    const end   = t.targetEndDay||TD;
+    const dur   = Math.max(1, end-start+1);
+    const perDay = selling/dur;
+    for(let d=start;d<=Math.min(end,TD);d++) daily[d]+=perDay;
+  }
+  // Cumulate and normalize to 0-100%
+  let cum=0, total=daily.reduce((s,v)=>s+v,0)||1;
+  const curve=[0];
+  for(let d=1;d<=TD;d++){
+    cum+=daily[d]||0;
+    curve.push(parseFloat(Math.min(100,cum/total*100).toFixed(2)));
+  }
+  // Ensure it ends at exactly 100
+  if(curve.length>TD) curve[TD]=100;
+  return curve;
+}
 
 // Schedule tasks — loaded from Firebase per project
 const SCHEDULE = [];
@@ -1245,7 +1272,7 @@ function buildSCurve(){
   const TD=PROJECT.totalDays;
   const labels=Array.from({length:TD+1},(_,i)=>'D'+i);
   // Planned curve (prepend Day 0 = 0%)
-  const planned=[0,...SCURVE_PLANNED.slice(0,TD).map(d=>d.cPct)];
+  const planned=computePlannedCurve(TD);
 
   // Actual cost progress
   const totalBudget=getTotalAllBudget();
@@ -1257,34 +1284,39 @@ function buildSCurve(){
     if(dayExp>0 || d<=getCurrentDay()) actualCostByDay[d]=totalBudget>0?(dayExp/totalBudget*100):0;
   }
 
-  // Actual schedule progress (budget-weighted)
-  // Actual schedule progress — per-day interpolation from actual start dates
+  // Actual schedule progress — selling-value weighted, per task % complete
   const actualSchedByDay=new Array(TD+1).fill(null);
   if(scheduleLocked){
     const curDayS=getCurrentDay();
-    const sellTasks=SCHEDULE.filter(t=>!t.section&&t.pctComplete>0);
-    const totalSell=COST_CODES_SELLING.filter(c=>!isInternalOnly(c)).reduce((s,c)=>s+(c.selling||0),0)||1;
+    const allTasks=SCHEDULE.filter(x=>!x.section);
+    const totalSell=getTotalSelling()||1;
+    // Build weight map: task → its selling value (equal share if no match)
+    const taskWeight=allTasks.map(t=>{
+      const cc=COST_CODES_SELLING.find(c=>!isInternalOnly(c)&&(
+        c.desc===t.name ||
+        c.desc.toLowerCase().includes((t.name||'').split(' ')[0].toLowerCase()) ||
+        (t.name||'').toLowerCase().includes((c.desc||'').split(' ')[0].toLowerCase())
+      ));
+      return cc?(cc.selling||1):(totalSell/Math.max(allTasks.length,1));
+    });
+    const totalWeight=taskWeight.reduce((s,w)=>s+w,0)||1;
     for(let d=0;d<=curDayS;d++){
-      let weightedPct=0, totalWeight=0;
-      for(const t of SCHEDULE.filter(x=>!x.section)){
-        const cc=COST_CODES_SELLING.find(c=>!isInternalOnly(c)&&c.desc&&t.name&&(c.desc.toLowerCase()===t.name.toLowerCase()||c.desc.toLowerCase().includes(t.name.split(' ')[0].toLowerCase())||t.name.toLowerCase().includes(c.desc.split(' ')[0].toLowerCase())));
-        const w=cc?(cc.selling||1):1;
-        totalWeight+=w;
-        const startDay=t.actualStartDate?dateToDay(t.actualStartDate):null;
-        if(startDay!==null&&startDay<=d){
-          // Linearly interpolate: at actualStartDay=0%, at curDay=pctComplete%
-          const span=curDayS-startDay;
-          const taskPctAtD=span>0?Math.min(t.pctComplete,(t.pctComplete/span*(d-startDay))):t.pctComplete;
-          weightedPct+=w*taskPctAtD;
-        } else if(startDay===null&&t.pctComplete>0&&t.targetStartDay<=d){
-          // No actual date but has progress — use target start day
-          const span=curDayS-t.targetStartDay;
-          const taskPctAtD=span>0?Math.min(t.pctComplete,(t.pctComplete/span*(d-t.targetStartDay))):t.pctComplete;
-          weightedPct+=w*taskPctAtD;
+      let weightedPct=0;
+      allTasks.forEach((t,i)=>{
+        const w=taskWeight[i];
+        const startDay=t.actualStartDate?dateToDay(t.actualStartDate):t.targetStartDay;
+        const st=startDay!==null?startDay:0;
+        if(st<=d){
+          // Interpolate % at day d — at startDay=0%, by curDayS=pctComplete
+          const span=Math.max(1,curDayS-st);
+          const pctAtD=Math.min(t.pctComplete, t.pctComplete/span*(d-st));
+          weightedPct+=w*pctAtD;
         }
-      }
-      actualSchedByDay[d]=totalWeight>0?(weightedPct/totalWeight):0;
+      });
+      actualSchedByDay[d]=parseFloat((weightedPct/totalWeight).toFixed(2));
     }
+    // Ensure Day 0 = 0
+    actualSchedByDay[0]=0;
   }
 
   // Challenge annotations
@@ -1593,6 +1625,10 @@ function buildDashboard(){
 
   document.getElementById('dash-scope-tbody').innerHTML=rows;
 
+  // Update sidebar contract value
+  const scEl = document.getElementById('sidebar-contract');
+  if(scEl){ const sv=getTotalSelling(); scEl.textContent = sv>0 ? '₱'+sv.toLocaleString('en',{minimumFractionDigits:2}) : '—'; }
+
   // Build S-Curve — debounced to prevent multiple renders stacking
   if(window._scurveTimer) clearTimeout(window._scurveTimer);
   window._scurveTimer = setTimeout(buildDashSCurve, 80);
@@ -1621,7 +1657,7 @@ function buildDashSCurve(){
   if(!el)return;
   const TD=PROJECT.totalDays;
   const labels=Array.from({length:TD+1},(_,i)=>'D'+i);
-  const planned=[0,...SCURVE_PLANNED.slice(0,TD).map(d=>d.cPct)];
+  const planned=computePlannedCurve(TD);
   const totalBudget=getTotalAllBudget();
   const actualCostByDay=new Array(TD+1).fill(null);
   for(let d=0;d<=TD;d++){
